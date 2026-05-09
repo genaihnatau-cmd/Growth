@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Growth">
+<meta name="theme-color" content="#0A0A12">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Growth Tracker</title>
+<link id="pwa-manifest">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0A0A12;--bg2:#111119;--bg3:#18181F;--bg4:#1F1F2C;--bg5:#28283A;
+  --accent:#7C6EFF;--accent2:#5B50D6;--accent-glow:#7C6EFF33;
+  --green:#1FD984;--green-dim:#1FD98420;--green-glow:#1FD98440;
+  --red:#FF4F6A;--red-dim:#FF4F6A18;
+  --amber:#FFB020;--amber-dim:#FFB02018;
+  --blue:#3EAAFF;--blue-dim:#3EAAFF18;
+  --pink:#FF6EAA;--pink-dim:#FF6EAA18;
+  --text:#EEEEFF;--text2:#7777AA;--text3:#3A3A5A;
+  --r:12px;--r-lg:18px;--r-xl:22px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Manrope',sans-serif;font-size:15px;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;position:relative}
+
+/* ── SCREENS ── */
+.screens{flex:1;overflow:hidden;position:relative}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-bottom:86px;padding-top:calc(var(--safe-top));display:none}
+.screen.active{display:block}
+.screen::-webkit-scrollbar{display:none}
+
+/* ── NAV ── */
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(17,17,25,.95);backdrop-filter:blur(20px);border-top:1px solid var(--bg4);padding:8px 0;padding-bottom:calc(8px + var(--safe-bot));display:flex}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;transition:.15s;color:var(--text3);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:4px}
+.nav-item.active{color:var(--accent)}
+.nav-icon{width:24px;height:24px;stroke-width:1.8;transition:.15s;flex-shrink:0}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 8px var(--accent))}
+
+/* ── TOPBAR ── */
+.topbar{padding:calc(var(--safe-top) + 14px) 16px 0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;background:var(--bg)}
+.topbar-title{font-size:24px;font-weight:900;letter-spacing:-1px;color:var(--text)}
+.topbar-title em{color:var(--accent);font-style:normal}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r-lg);padding:16px;margin:0 16px 10px}
+.card-flat{background:var(--bg3);border-radius:var(--r);padding:12px 14px;margin:0 16px 8px}
+
+/* ── SEC ── */
+.sec{font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin:18px 16px 8px;display:flex;align-items:center;gap:8px}
+.sec::after{content:'';flex:1;height:1px;background:var(--bg4)}
+
+/* ── HERO ── */
+.hero{margin:12px 16px;background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r-xl);padding:20px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:var(--accent);opacity:.05;pointer-events:none}
+.hero-mult{font-size:58px;font-weight:900;line-height:1;letter-spacing:-2px;background:linear-gradient(135deg,var(--green) 0%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-label{font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.hero-sub{font-size:13px;color:var(--text2);margin-top:8px}
+.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.hstat{background:rgba(255,255,255,.03);border:1px solid var(--bg4);border-radius:var(--r);padding:10px 6px;text-align:center}
+.hstat-val{font-size:17px;font-weight:800}
+.hstat-lbl{font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+
+/* ── PBAR ── */
+.pbar-wrap{background:var(--bg4);border-radius:100px;height:5px;overflow:hidden}
+.pbar{height:5px;border-radius:100px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+
+/* ── TASK ── */
+.task-card{margin:0 16px 6px;background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r);padding:13px 14px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:.15s;-webkit-user-select:none;user-select:none;position:relative}
+.task-card:active{opacity:.7;transform:scale(.98)}
+.task-card.done{opacity:.45}
+.task-card.done .tname{text-decoration:line-through;color:var(--text2)}
+.task-card.destruct{border-color:rgba(255,79,106,.3);background:var(--red-dim)}
+.task-card.destruct.active-bad{border-color:var(--red)}
+.cb{width:24px;height:24px;min-width:24px;border-radius:7px;border:2px solid var(--bg5);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:.2s}
+.cb.yes{background:var(--green);border-color:var(--green)}
+.cb.yes::after{content:'';width:6px;height:10px;border:2.5px solid #060E0A;border-top:none;border-left:none;transform:rotate(45deg) translate(-1px,-1px);display:block}
+.cb.bad{background:var(--red);border-color:var(--red)}
+.cb.bad::after{content:'✕';font-size:12px;font-weight:900;color:#fff;line-height:1}
+.tname{font-size:14px;font-weight:700;color:var(--text);line-height:1.35}
+.tsub{font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4}
+.xpb{font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;margin-top:1px}
+.xpb-pos{color:var(--accent);background:var(--accent-glow);border:1px solid var(--accent)}
+.xpb-neg{color:var(--red);background:var(--red-dim);border:1px solid var(--red)}
+
+/* ── RING ── */
+.ring-wrap{position:relative;display:inline-block}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-num{font-size:30px;font-weight:900;color:var(--text)}
+.ring-lbl{font-size:9px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+
+/* ── STREAK ── */
+.streak-row{display:flex;gap:5px}
+.sday{flex:1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 2px}
+.sday .dn{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.sday .dd{font-size:13px;font-weight:800}
+.sday.done{background:var(--green-dim);border:1px solid var(--green);color:var(--green)}
+.sday.today{background:var(--accent-glow);border:2px solid var(--accent);color:var(--accent)}
+.sday.empty{background:var(--bg4);color:var(--text3)}
+.sday.bad{background:var(--red-dim);border:1px solid rgba(255,79,106,.3);color:var(--red)}
+
+/* ── TAGS ── */
+.stag{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;padding:4px 10px;border-radius:20px;margin:0 16px 8px;text-transform:uppercase;letter-spacing:.05em}
+.sg{background:var(--green-dim);color:var(--green)}
+.sa{background:var(--amber-dim);color:var(--amber)}
+.sp{background:var(--accent-glow);color:var(--accent)}
+.sb{background:var(--blue-dim);color:var(--blue)}
+.sr{background:var(--red-dim);color:var(--red)}
+.sk{background:var(--pink-dim);color:var(--pink)}
+
+/* ── METRIC ── */
+.met-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 10px}
+.met-box{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r);padding:13px 14px}
+.met-lbl{font-size:10px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.met-val{font-size:22px;font-weight:900}
+
+/* ── SECTOR ── */
+.sector-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 10px}
+.sec-card{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r);padding:13px}
+.sec-name{font-size:10px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.sec-pct{font-size:26px;font-weight:900;margin-bottom:8px}
+.sec-days{font-size:10px;font-weight:700;margin-top:5px}
+
+/* ── FINANCE ── */
+.fin-hero{margin:10px 16px;background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r-xl);padding:18px;text-align:center}
+.fin-amount{font-size:46px;font-weight:900;letter-spacing:-1.5px}
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 10px}
+.fin-stat{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r);padding:12px 14px}
+.fin-sl{font-size:10px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.fin-sv{font-size:20px;font-weight:900}
+
+/* ── INP ── */
+.inp{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r);padding:11px 14px;font-size:14px;color:var(--text);font-family:inherit;outline:none;transition:.15s}
+.inp:focus{border-color:var(--accent)}
+.inp::placeholder{color:var(--text3)}
+.inp-sel{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r);padding:11px 14px;font-size:14px;color:var(--text);font-family:inherit;outline:none;-webkit-appearance:none}
+
+/* ── BTN ── */
+.btn{padding:11px 18px;border-radius:var(--r);font-size:14px;font-weight:800;cursor:pointer;border:none;transition:.15s;font-family:inherit;letter-spacing:.01em}
+.btn:active{transform:scale(.96)}
+.btn-accent{background:var(--accent);color:#fff;box-shadow:0 4px 20px rgba(124,110,255,.3)}
+.btn-ghost{background:var(--bg3);border:1px solid var(--bg4);color:var(--text2)}
+.btn-danger{background:var(--red-dim);border:1px solid var(--red);color:var(--red)}
+.btn-sm{padding:7px 12px;font-size:12px}
+.btn-full{width:100%}
+
+/* ── GOAL ── */
+.goal-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--bg3)}
+.goal-row:last-child{border-bottom:none}
+.goal-name{font-size:13px;font-weight:700;flex:1;color:var(--text)}
+.goal-bar-bg{width:80px;background:var(--bg4);border-radius:100px;height:5px;flex-shrink:0;overflow:hidden}
+.goal-bar{height:5px;border-radius:100px;background:var(--accent);transition:width .7s}
+.goal-pct{font-size:12px;font-weight:800;color:var(--accent);min-width:32px;text-align:right}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(16px);font-size:14px;font-weight:800;padding:12px 22px;border-radius:var(--r-lg);opacity:0;transition:.3s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.pos{background:var(--green);color:#030A05;box-shadow:0 6px 28px var(--green-glow)}
+.toast.neg{background:var(--red);color:#fff;box-shadow:0 6px 28px rgba(255,79,106,.4)}
+.toast.info{background:var(--accent);color:#fff;box-shadow:0 6px 28px rgba(124,110,255,.4)}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:20px 20px calc(20px + var(--safe-bot));width:100%;max-width:600px;max-height:88vh;overflow-y:auto}
+.modal::-webkit-scrollbar{display:none}
+.modal-handle{width:36px;height:4px;background:var(--bg5);border-radius:100px;margin:0 auto 18px;cursor:pointer}
+.modal-title{font-size:20px;font-weight:900;margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--text2);margin-bottom:18px}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-overlay.open .modal{animation:slideUp .3s cubic-bezier(.4,0,.2,1)}
+
+/* ── ONBOARDING ── */
+.onboard-wrap{position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;padding:calc(var(--safe-top) + 20px) 20px calc(var(--safe-bot) + 20px)}
+.onboard-wrap::-webkit-scrollbar{display:none}
+.ob-step{display:none}
+.ob-step.active{display:block}
+.ob-logo{font-size:42px;font-weight:900;letter-spacing:-2px;color:var(--text);margin-bottom:6px}
+.ob-logo em{color:var(--accent);font-style:normal}
+.ob-tagline{font-size:16px;color:var(--text2);margin-bottom:36px;font-weight:500}
+.ob-q{font-size:22px;font-weight:900;color:var(--text);margin-bottom:6px;line-height:1.3;letter-spacing:-.3px}
+.ob-hint{font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.5}
+.ob-textarea{width:100%;background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r-lg);padding:14px 16px;font-size:16px;color:var(--text);font-family:inherit;outline:none;resize:none;line-height:1.5;min-height:120px}
+.ob-textarea:focus{border-color:var(--accent)}
+.ob-textarea::placeholder{color:var(--text3)}
+.ob-inp{width:100%;background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r);padding:13px 16px;font-size:16px;color:var(--text);font-family:inherit;outline:none;margin-bottom:10px}
+.ob-inp:focus{border-color:var(--accent)}
+.ob-inp::placeholder{color:var(--text3)}
+.ob-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.ob-chip{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--bg5);color:var(--text2);background:var(--bg3);transition:.15s;-webkit-user-select:none;user-select:none}
+.ob-chip.selected{border-color:var(--accent);color:var(--accent);background:var(--accent-glow)}
+.ob-chip.danger{border-color:rgba(255,79,106,.4);color:var(--text2);background:var(--bg3)}
+.ob-chip.danger.selected{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+.ob-progress{display:flex;gap:5px;margin-bottom:28px}
+.ob-dot{flex:1;height:3px;border-radius:100px;background:var(--bg4);transition:.3s}
+.ob-dot.done{background:var(--accent)}
+.ob-dot.active{background:var(--accent);opacity:.5}
+.ob-generating{text-align:center;padding:40px 0}
+.ob-generating .big{font-size:52px;margin-bottom:20px}
+.ob-generating p{font-size:16px;color:var(--text2);font-weight:600;line-height:1.6}
+.ob-generating .dots{font-size:28px;color:var(--accent);margin-top:14px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.pulse{animation:pulse 1.2s ease infinite}
+
+/* ── DESTRUCT SECTION ── */
+.destruct-header{margin:0 16px 10px;background:var(--red-dim);border:1px solid rgba(255,79,106,.2);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.destruct-title{font-size:13px;font-weight:800;color:var(--red)}
+.destruct-sub{font-size:11px;color:var(--text2);margin-top:1px}
+
+/* ── HORIZON TABS ── */
+.horizon-tabs{display:flex;gap:6px;margin:0 16px 12px;background:var(--bg3);border-radius:var(--r);padding:4px}
+.htab{flex:1;padding:8px 4px;border-radius:9px;font-size:12px;font-weight:800;text-align:center;cursor:pointer;transition:.15s;color:var(--text2)}
+.htab.active{background:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(124,110,255,.4)}
+
+/* ── DAILY CHECKIN ── */
+.checkin-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px}
+.mood-btn{background:var(--bg3);border:1.5px solid var(--bg4);border-radius:var(--r);padding:10px 4px;text-align:center;cursor:pointer;transition:.15s;-webkit-user-select:none;user-select:none}
+.mood-btn.active{border-color:var(--accent);background:var(--accent-glow)}
+.mood-emoji{font-size:24px;display:block;margin-bottom:3px}
+.mood-lbl{font-size:10px;font-weight:700;color:var(--text2)}
+
+/* ── SETTINGS ROWS ── */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--bg3)}
+.set-row:last-child{border-bottom:none}
+.set-lbl{font-size:14px;font-weight:700}
+.set-sub{font-size:12px;color:var(--text2);margin-top:2px}
+
+/* ── ACH ── */
+.ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 16px 10px}
+.ach{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r);padding:12px 8px;text-align:center}
+.ach.unlocked{border-color:var(--amber);background:var(--amber-dim)}
+.ach-icon{font-size:28px;margin-bottom:6px}
+.ach-name{font-size:10px;font-weight:800;color:var(--text3);letter-spacing:.02em}
+.ach.unlocked .ach-name{color:var(--amber)}
+
+/* ── MONK TRIGGER ── */
+.trigger-card{margin:0 16px 10px;background:var(--amber-dim);border:1px solid rgba(255,176,32,.3);border-radius:var(--r-lg);padding:16px}
+
+/* ── REFL ── */
+.refl-cat{font-size:10px;font-weight:800;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.refl-q{font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;line-height:1.4;letter-spacing:-.2px}
+.refl-hint{font-size:13px;color:var(--text2);margin-bottom:14px;font-style:italic}
+.refl-ta{width:100%;background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r-lg);padding:13px 15px;font-size:15px;color:var(--text);font-family:inherit;outline:none;resize:vertical;min-height:110px;line-height:1.5}
+.refl-ta:focus{border-color:var(--accent)}
+.refl-ta::placeholder{color:var(--text3)}
+
+/* ── AI BLOCKS ── */
+.ai-insight{background:var(--accent-glow);border:1px solid var(--accent);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.ai-block{border-radius:var(--r);padding:12px;margin-bottom:8px}
+.ai-bl{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
+.ai-bt{font-size:13px;line-height:1.55;color:var(--text)}
+.ai-task-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--bg4)}
+.ai-task-row:last-child{border-bottom:none}
+
+@keyframes pop{0%{transform:scale(.7);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .35s cubic-bezier(.4,0,.2,1)}
+
+/* ── FOCUS CARD ── */
+.focus-card{margin:10px 16px;background:var(--bg3);border:1px solid var(--accent);border-radius:var(--r-lg);padding:14px 16px;display:flex;align-items:center;gap:12px}
+.focus-icon{font-size:26px;flex-shrink:0}
+.focus-txt{font-size:14px;font-weight:700;color:var(--text);line-height:1.4}
+.focus-sub{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* ── MONTH/QUARTER TASKS ── */
+.horizon-task{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg3)}
+.horizon-task:last-child{border-bottom:none}
+.h-circle{width:18px;height:18px;border-radius:50%;border:2px solid var(--accent);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:.15s;cursor:pointer}
+.h-circle.done{background:var(--accent);border-color:var(--accent)}
+.h-circle.done::after{content:'✓';font-size:9px;font-weight:900;color:#fff}
+
+/* ── REPORT ── */
+.rep-cat{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg3);font-size:13px}
+.rep-cat:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ═══ ONBOARDING ═══ -->
+  <div class="onboard-wrap" id="onboard">
+    <!-- STEP 0: Welcome -->
+    <div class="ob-step active" id="ob0">
+      <div class="ob-logo">Growth<em>.</em></div>
+      <div class="ob-tagline">Оцифруй свою жизнь. Видь рост в реальном времени.</div>
+      <div style="background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r-xl);padding:20px;margin-bottom:28px">
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">Как это работает:</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="min-width:28px;height:28px;border-radius:50%;background:var(--accent-glow);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:var(--accent)">1</div><div><div style="font-size:13px;font-weight:700">Настрой под себя</div><div style="font-size:12px;color:var(--text2)">ИИ создаст задачи и цели по твоим ответам</div></div></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="min-width:28px;height:28px;border-radius:50%;background:var(--green-dim);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:var(--green)">2</div><div><div style="font-size:13px;font-weight:700">Отмечай ежедневно</div><div style="font-size:12px;color:var(--text2)">Полезные привычки дают XP, деструктивные — отнимают</div></div></div>
+          <div style="display:flex;gap:12px;align-items:flex-start"><div style="min-width:28px;height:28px;border-radius:50%;background:var(--amber-dim);border:1px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:var(--amber)">3</div><div><div style="font-size:13px;font-weight:700">Видь рост как цифру</div><div style="font-size:12px;color:var(--text2)">1% в день = ×37.8 за год. Твой множитель растёт каждый день</div></div></div>
+        </div>
+      </div>
+      <button class="btn btn-accent btn-full" style="font-size:16px;padding:16px" onclick="obNext()">Начать → 5 минут</button>
+      <div style="text-align:center;font-size:12px;color:var(--text3);margin-top:14px">Все данные хранятся только на твоём устройстве</div>
+    </div>
+
+    <!-- STEP 1: Name + Goal -->
+    <div class="ob-step" id="ob1">
+      <div class="ob-progress" id="ob-prog"></div>
+      <div class="ob-q">Как тебя зовут?</div>
+      <div class="ob-hint">Имя будет использоваться в персонализации</div>
+      <input class="ob-inp" id="ob-name" placeholder="Твоё имя" maxlength="40" autocomplete="given-name">
+      <div class="ob-q" style="margin-top:20px">Какая твоя главная цель на этот год?</div>
+      <div class="ob-hint">Будь конкретен — это станет основой всего трекера</div>
+      <textarea class="ob-textarea" id="ob-main-goal" placeholder="Например: Заработать первый миллион рублей, запустить продукт на международный рынок, похудеть на 20 кг и стать примером..."></textarea>
+      <button class="btn btn-accent btn-full" style="margin-top:16px" onclick="obNext()">Далее →</button>
+    </div>
+
+    <!-- STEP 2: Life spheres -->
+    <div class="ob-step" id="ob2">
+      <div class="ob-progress" id="ob-prog2"></div>
+      <div class="ob-q">Какие сферы жизни хочешь прокачивать?</div>
+      <div class="ob-hint">Выбери от 2 до 5 — по ним будут формироваться ежедневные задачи</div>
+      <div class="ob-chips" id="spheres-chips">
+        <div class="ob-chip" data-val="business" onclick="toggleChip(this)">💼 Бизнес/Карьера</div>
+        <div class="ob-chip" data-val="money" onclick="toggleChip(this)">💰 Финансы</div>
+        <div class="ob-chip" data-val="body" onclick="toggleChip(this)">💪 Тело/Здоровье</div>
+        <div class="ob-chip" data-val="mind" onclick="toggleChip(this)">🧠 Ум/Саморазвитие</div>
+        <div class="ob-chip" data-val="relations" onclick="toggleChip(this)">❤️ Отношения</div>
+        <div class="ob-chip" data-val="creativity" onclick="toggleChip(this)">🎨 Творчество</div>
+        <div class="ob-chip" data-val="social" onclick="toggleChip(this)">🌐 Соцсети/Контент</div>
+        <div class="ob-chip" data-val="sport" onclick="toggleChip(this)">🏆 Спорт</div>
+        <div class="ob-chip" data-val="spiritual" onclick="toggleChip(this)">🧘 Духовность</div>
+        <div class="ob-chip" data-val="travel" onclick="toggleChip(this)">✈️ Путешествия</div>
+      </div>
+      <div class="ob-q" style="margin-top:20px">Что тебя больше всего тормозит прямо сейчас?</div>
+      <div class="ob-hint">ИИ учтёт это при генерации задач</div>
+      <textarea class="ob-textarea" id="ob-blockers" placeholder="Например: прокрастинация, нет системы, мало времени, страх неудачи, рассеянность..."></textarea>
+      <button class="btn btn-accent btn-full" style="margin-top:16px" onclick="obNext()">Далее →</button>
+    </div>
+
+    <!-- STEP 3: Destructive habits -->
+    <div class="ob-step" id="ob3">
+      <div class="ob-progress" id="ob-prog3"></div>
+      <div class="ob-q">Выбери свои "яды" — то что разрушает тебя</div>
+      <div class="ob-hint">Каждый раз когда сделаешь это — потеряешь XP. Честность с собой — первый шаг к изменениям</div>
+      <div class="ob-chips" id="destruct-chips">
+        <div class="ob-chip danger" data-val="smoking" data-xp="20" onclick="toggleChip(this)">🚬 Никотин/курение</div>
+        <div class="ob-chip danger" data-val="alcohol" data-xp="25" onclick="toggleChip(this)">🍺 Алкоголь</div>
+        <div class="ob-chip danger" data-val="porn" data-xp="30" onclick="toggleChip(this)">🔞 Порно/рукоблудие</div>
+        <div class="ob-chip danger" data-val="fastfood" data-xp="15" onclick="toggleChip(this)">🍔 Фастфуд/джанк</div>
+        <div class="ob-chip danger" data-val="scroll" data-xp="10" onclick="toggleChip(this)">📱 Бесконечный скроллинг</div>
+        <div class="ob-chip danger" data-val="reels" data-xp="10" onclick="toggleChip(this)">🎞️ Reels/Shorts/TikTok</div>
+        <div class="ob-chip danger" data-val="games" data-xp="15" onclick="toggleChip(this)">🎮 Игры (без пользы)</div>
+        <div class="ob-chip danger" data-val="drugs" data-xp="40" onclick="toggleChip(this)">💊 Наркотики</div>
+        <div class="ob-chip danger" data-val="gossip" data-xp="10" onclick="toggleChip(this)">🗣️ Сплетни/нытьё</div>
+        <div class="ob-chip danger" data-val="overeating" data-xp="10" onclick="toggleChip(this)">🍩 Переедание</div>
+        <div class="ob-chip danger" data-val="lazysleep" data-xp="15" onclick="toggleChip(this)">😴 Сон до 10+ утра</div>
+        <div class="ob-chip danger" data-val="netflix" data-xp="12" onclick="toggleChip(this)">📺 Сериалы (бесконтрольно)</div>
+        <div class="ob-chip danger" data-val="toxic" data-xp="15" onclick="toggleChip(this)">😤 Токсичное общение</div>
+        <div class="ob-chip danger" data-val="shopping" data-xp="12" onclick="toggleChip(this)">🛍️ Импульсивные покупки</div>
+        <div class="ob-chip danger" data-val="procrastinate" data-xp="20" onclick="toggleChip(this)">⏳ Прокрастинация (>1ч)</div>
+      </div>
+      <div style="margin-top:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:8px">Добавить своё:</div>
+        <div style="display:flex;gap:8px">
+          <input class="inp" id="custom-destruct-inp" placeholder="Название яда" style="flex:1;font-size:13px;padding:9px 12px">
+          <button class="btn btn-sm btn-danger" onclick="addCustomDestruct()">+</button>
+        </div>
+        <div id="custom-destructs" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+      </div>
+      <button class="btn btn-accent btn-full" style="margin-top:18px" onclick="obNext()">Далее →</button>
+    </div>
+
+    <!-- STEP 4: Context for AI -->
+    <div class="ob-step" id="ob4">
+      <div class="ob-progress" id="ob-prog4"></div>
+      <div class="ob-q">Расскажи о себе подробнее</div>
+      <div class="ob-hint">ИИ использует это чтобы создать максимально точные задачи именно для тебя</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:6px">Чем ты занимаешься?</div>
+      <input class="ob-inp" id="ob-occupation" placeholder="Например: предприниматель, студент, фрилансер, менеджер..." style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:6px">Где ты сейчас находишься?</div>
+      <input class="ob-inp" id="ob-where" placeholder="Через 3-6 месяцев хотел бы достичь..." style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:6px">Что ты готов делать каждый день?</div>
+      <input class="ob-inp" id="ob-daily-time" placeholder="Например: 1-2 часа утром, вечером 30 минут...">
+      <button class="btn btn-accent btn-full" style="margin-top:20px" onclick="obGenerate()">🤖 Создать мой трекер →</button>
+    </div>
+
+    <!-- STEP 5: Generating -->
+    <div class="ob-step" id="ob5">
+      <div class="ob-generating">
+        <div class="big">🤖</div>
+        <p>ИИ изучает твои ответы<br>и создаёт персональный трекер...</p>
+        <div class="dots pulse" id="ob-dots">●●●●●</div>
+      </div>
+    </div>
+  </div><!-- /onboard -->
+
+  <!-- ═══ MAIN APP ═══ -->
+  <div class="screens">
+    <!-- TODAY -->
+    <div class="screen active" id="screen-today">
+      <div class="topbar">
+        <div class="topbar-title" id="greeting-title">Рост<em>.</em></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="background:var(--amber-dim);border:1px solid var(--amber);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:800;color:var(--amber)" id="lvl-badge">★ Новичок</div>
+          <div style="background:var(--accent-glow);border:1px solid var(--accent);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:800;color:var(--accent)">⚡ <span id="total-xp-top">0</span></div>
+        </div>
+      </div>
+
+      <!-- XP -->
+      <div style="margin:14px 16px 0">
+        <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">
+          <span>Ур. <span id="lvl-num">1</span> · <span id="lvl-name">Новичок</span></span>
+          <span><span id="xp-cur">0</span> / <span id="xp-next">100</span> XP</span>
+        </div>
+        <div class="pbar-wrap"><div class="pbar" id="xp-bar" style="width:0%;background:var(--accent)"></div></div>
+      </div>
+
+      <!-- HERO -->
+      <div class="hero" style="margin-top:12px">
+        <div class="hero-label">Множитель роста</div>
+        <div class="hero-mult" id="growth-big">×1.00</div>
+        <div class="hero-sub" id="growth-desc">Начни отмечать задачи чтобы видеть рост</div>
+        <div class="hero-stats">
+          <div class="hstat"><div class="hstat-val" id="growth-today" style="color:var(--green)">+0%</div><div class="hstat-lbl">Сегодня</div></div>
+          <div class="hstat"><div class="hstat-val" id="growth-week" style="color:var(--blue)">+0%</div><div class="hstat-lbl">7 дней</div></div>
+          <div class="hstat"><div class="hstat-val" id="streak-hero" style="color:var(--amber)">0🔥</div><div class="hstat-lbl">Серия</div></div>
+        </div>
+        <div style="margin-top:14px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">
+            <span>К ×37.8 за год</span><span id="growth-year-pct">0%</span>
+          </div>
+          <div class="pbar-wrap" style="height:7px;background:var(--bg4)">
+            <div class="pbar" id="growth-year-bar" style="width:0%;height:7px;background:linear-gradient(90deg,var(--accent),var(--green))"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOCUS -->
+      <div class="focus-card">
+        <div class="focus-icon">🎯</div>
+        <div style="flex:1">
+          <div class="focus-txt" id="weekly-focus-text">Настрой трекер и получи фокус недели</div>
+          <div class="focus-sub">Обновляется после еженедельной рефлексии</div>
+        </div>
+        <button style="flex-shrink:0;padding:8px 14px;background:var(--accent);border:none;color:#fff;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:800;font-family:inherit" onclick="openReflection()">→</button>
+      </div>
+
+      <!-- STREAK -->
+      <div class="sec">Серия</div>
+      <div class="card"><div class="streak-row" id="streak-row"></div><div style="font-size:11px;color:var(--text2);margin-top:10px;font-weight:500">80%+ задач = день засчитан. Красный = срыв или деструктор</div></div>
+
+      <!-- DAILY RING + METRICS -->
+      <div class="sec">Сегодня</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:10px">
+        <div class="ring-wrap">
+          <svg width="110" height="110" viewBox="0 0 110 110"><circle cx="55" cy="55" r="46" fill="none" stroke="var(--bg4)" stroke-width="9"/><circle cx="55" cy="55" r="46" fill="none" stroke="var(--green)" stroke-width="9" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289" id="day-ring" style="transition:stroke-dashoffset .9s cubic-bezier(.4,0,.2,1)"/></svg>
+          <div class="ring-text"><div class="ring-num" id="day-score-pct">0%</div><div class="ring-lbl">задач</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;flex:1">
+          <div class="met-box" style="margin:0"><div class="met-lbl">Выполнено</div><div class="met-val" id="done-today" style="color:var(--green)">0/0</div></div>
+          <div class="met-box" style="margin:0"><div class="met-lbl">День / 365</div><div class="met-val" id="day-num" style="color:var(--amber)">1</div></div>
+        </div>
+      </div>
+
+      <!-- DAILY MOOD CHECKIN -->
+      <div class="sec">Энергия дня</div>
+      <div class="card" id="mood-checkin-block">
+        <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:10px">Как ты себя чувствуешь прямо сейчас?</div>
+        <div class="checkin-grid" id="energy-grid">
+          <div class="mood-btn" onclick="setEnergy(1)"><span class="mood-emoji">😵</span><span class="mood-lbl">На нуле</span></div>
+          <div class="mood-btn" onclick="setEnergy(2)"><span class="mood-emoji">😔</span><span class="mood-lbl">Слабо</span></div>
+          <div class="mood-btn" onclick="setEnergy(3)"><span class="mood-emoji">😐</span><span class="mood-lbl">Нормально</span></div>
+          <div class="mood-btn" onclick="setEnergy(4)"><span class="mood-emoji">😊</span><span class="mood-lbl">Хорошо</span></div>
+          <div class="mood-btn" onclick="setEnergy(5)"><span class="mood-emoji">🔥</span><span class="mood-lbl">На пике</span></div>
+        </div>
+      </div>
+
+      <!-- TASKS: POSITIVE -->
+      <div id="positive-tasks-wrap"></div>
+
+      <!-- DESTRUCTIVE -->
+      <div class="sec">Деструкторы</div>
+      <div class="destruct-header">
+        <div style="font-size:24px">☠️</div>
+        <div>
+          <div class="destruct-title">Если сделал — честно отметь</div>
+          <div class="destruct-sub">Каждый деструктор снимает XP и снижает множитель роста. Оцифруй свои яды.</div>
+        </div>
+      </div>
+      <div id="destruct-tasks-wrap"></div>
+    </div><!-- /today -->
+
+    <!-- PLAN -->
+    <div class="screen" id="screen-plan">
+      <div class="topbar"><div class="topbar-title">План<em>.</em></div></div>
+      <div class="sec">Горизонт</div>
+      <div class="horizon-tabs">
+        <div class="htab active" onclick="switchHorizon('week',this)">Неделя</div>
+        <div class="htab" onclick="switchHorizon('month',this)">Месяц</div>
+        <div class="htab" onclick="switchHorizon('quarter',this)">Квартал</div>
+      </div>
+      <div id="horizon-content"></div>
+      <div class="sec">Цели</div>
+      <div class="card" id="goals-block"></div>
+    </div>
+
+    <!-- COACH -->
+    <div class="screen" id="screen-coach">
+      <div class="topbar">
+        <div class="topbar-title">Коуч<em>.</em></div>
+        <div style="display:flex;gap:8px">
+          <button onclick="showUniverseMessage()" style="background:var(--accent-glow);border:1px solid var(--accent);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;color:var(--accent);cursor:pointer;font-family:inherit">✨ Вселенная</button>
+          <button onclick="clearCoachChat()" style="background:var(--bg3);border:1px solid var(--bg4);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;color:var(--text2);cursor:pointer;font-family:inherit">Очистить</button>
+        </div>
+      </div>
+
+      <!-- UNIVERSE CARD -->
+      <div id="universe-card" style="margin:12px 16px;background:linear-gradient(135deg,#1a1030,#0d1a20);border:1px solid var(--accent);border-radius:var(--r-xl);padding:18px;display:none">
+        <div style="font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">✨ Вселенная говорит</div>
+        <div id="universe-text" style="font-size:16px;font-weight:600;color:var(--text);line-height:1.6;font-style:italic"></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:8px" id="universe-time"></div>
+      </div>
+
+      <!-- CHAT -->
+      <div id="coach-messages" style="padding:0 16px;display:flex;flex-direction:column;gap:10px;min-height:200px"></div>
+
+      <!-- QUICK PROMPTS -->
+      <div id="coach-quick-wrap" style="padding:10px 16px 0">
+        <div style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Быстрые вопросы</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px" id="coach-quick-btns"></div>
+      </div>
+
+      <!-- INPUT -->
+      <div style="padding:12px 16px;display:flex;gap:8px;align-items:flex-end">
+        <textarea id="coach-inp" placeholder="Напиши коучу..." style="flex:1;background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r-lg);padding:11px 14px;font-size:14px;color:var(--text);font-family:inherit;outline:none;resize:none;min-height:46px;max-height:120px;line-height:1.5;transition:.15s" oninput="autoResize(this)" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--bg4)'"></textarea>
+        <button onclick="sendCoachMessage()" style="width:46px;height:46px;border-radius:var(--r);background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(124,110,255,.4);transition:.15s" id="coach-send-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="screen" id="screen-stats">
+      <div class="topbar"><div class="topbar-title">Аналитика<em>.</em></div></div>
+      <div class="sec">По секторам</div>
+      <div class="sector-grid" id="sectors"></div>
+      <div class="sec">7 дней</div>
+      <div class="card" style="padding-bottom:8px">
+        <div style="position:relative;height:180px"><canvas id="history-chart" role="img" aria-label="Прогресс за 7 дней">Прогресс</canvas></div>
+      </div>
+      <div class="sec">Множитель роста</div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Накопленный множитель</div>
+        <div style="font-size:52px;font-weight:900;color:var(--green);letter-spacing:-2px" id="stats-mult">×1.00</div>
+        <div style="font-size:13px;color:var(--text2);margin:6px 0 12px;line-height:1.5">1% в день × 365 = ×37.8<br>Твой реальный прогресс:</div>
+        <div class="pbar-wrap" style="height:10px"><div class="pbar" id="stats-year-bar" style="height:10px;width:0%;background:linear-gradient(90deg,var(--accent),var(--green))"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:6px;font-weight:700"><span>×1.0</span><span id="stats-year-pct">0%</span><span>×37.8</span></div>
+      </div>
+      <div class="sec">Достижения</div>
+      <div class="ach-grid" id="achievements-grid"></div>
+      <div class="sec">Паттерны роста</div>
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">Твои лучшие и худшие дни по энергии</div>
+        <div id="patterns-block" style="font-size:13px;color:var(--text2)">Нужно больше данных (7+ дней)</div>
+      </div>
+    </div>
+
+    <!-- FINANCE -->
+    <div class="screen" id="screen-finance">
+      <div class="topbar"><div class="topbar-title">Финансы<em>.</em></div></div>
+      <div class="fin-hero">
+        <div style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Текущий баланс</div>
+        <div class="fin-amount" id="fin-balance">$0</div>
+      </div>
+      <div class="fin-grid">
+        <div class="fin-stat"><div class="fin-sl">Приход</div><div class="fin-sv" id="fin-income" style="color:var(--green)">$0</div></div>
+        <div class="fin-stat"><div class="fin-sl">Расход</div><div class="fin-sv" id="fin-expense" style="color:var(--red)">$0</div></div>
+        <div class="fin-stat"><div class="fin-sl">Накопления</div><div class="fin-sv" id="fin-save" style="color:var(--blue)">$0</div></div>
+        <div class="fin-stat"><div class="fin-sl">% от прихода</div><div class="fin-sv" id="fin-save-pct">0%</div></div>
+      </div>
+      <div class="card" style="padding-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px"><span>Накопления / цель 10%</span><span id="fin-save-target">цель $0</span></div>
+        <div class="pbar-wrap"><div class="pbar" id="fin-save-bar" style="width:0%"></div></div>
+      </div>
+      <div class="sec">Добавить</div>
+      <div style="margin:0 16px 10px;display:flex;flex-direction:column;gap:8px">
+        <select class="inp-sel" id="fin-type" style="width:100%"><option value="income">Приход</option><option value="expense">Расход</option><option value="save">Накопление</option></select>
+        <div style="display:flex;gap:8px">
+          <input class="inp" type="number" id="fin-amount" placeholder="Сумма" style="width:110px;padding:11px 12px" min="0">
+          <input class="inp" type="text" id="fin-desc" placeholder="Описание" style="flex:1;padding:11px 12px">
+        </div>
+        <button class="btn btn-accent btn-full" onclick="addFinance()">+ Добавить</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="openSetBalance()">✎ Задать баланс</button>
+          <button class="btn btn-ghost btn-sm" onclick="openMonthReport()">📊 Отчёт</button>
+        </div>
+      </div>
+      <div class="sec">Операции</div>
+      <div class="card" id="fin-log"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="screen-settings">
+      <div class="topbar"><div class="topbar-title">Я<em>.</em></div></div>
+      <div style="margin:14px 16px;display:flex;align-items:center;gap:14px">
+        <div style="width:58px;height:58px;border-radius:50%;background:var(--accent-glow);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:var(--accent)" id="avatar-initial">?</div>
+        <div><div style="font-size:20px;font-weight:900" id="profile-name">—</div><div style="font-size:13px;color:var(--text2);margin-top:2px" id="profile-goal-short"></div></div>
+      </div>
+      <div class="sec">Рефлексия</div>
+      <div class="card">
+        <div id="last-reflection-info" style="font-size:13px;color:var(--text2);margin-bottom:12px">Рефлексия не проводилась</div>
+        <button class="btn btn-accent btn-full" onclick="openReflection()">🧠 Еженедельная рефлексия</button>
+      </div>
+      <div class="sec">Данные</div>
+      <div class="card">
+        <div class="set-row"><div><div class="set-lbl">Экспорт</div><div class="set-sub">Сохранить backup .json</div></div><button class="btn btn-ghost btn-sm" onclick="exportData()">Сохранить</button></div>
+        <div class="set-row"><div><div class="set-lbl">Импорт</div><div class="set-sub">Восстановить из backup</div></div><button class="btn btn-ghost btn-sm" onclick="importData()">Загрузить</button></div>
+        <div class="set-row"><div><div class="set-lbl">Сбросить трекер</div><div class="set-sub">Начать заново с анкеты</div></div><button class="btn btn-danger btn-sm" onclick="resetConfirm()">Сброс</button></div>
+      </div>
+      <div class="sec">О приложении</div>
+      <div class="card" style="background:var(--accent-glow);border-color:var(--accent)">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px">📱 Добавить на iPhone</div>
+        <div style="font-size:13px;color:var(--text2)">Нажми <b style="color:var(--text)">Поделиться → На экран «Домой»</b> — работает как приложение</div>
+      </div>
+      <div class="card"><div style="font-size:13px;color:var(--text2);line-height:1.6"><b style="color:var(--text)">1% в день</b> = ×37.8 за год. Трекер считает твой реальный множитель, учитывая и деструкторы. Будь честен — только тогда цифра имеет смысл.</div></div>
+    </div>
+  </div><!-- /screens -->
+
+  <nav class="nav">
+    <div class="nav-item active" id="nav-today" onclick="switchTab('today')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Сегодня
+    </div>
+    <div class="nav-item" id="nav-plan" onclick="switchTab('plan')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>План
+    </div>
+    <div class="nav-item" id="nav-coach" onclick="switchTab('coach')" style="position:relative">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Коуч
+      <div id="coach-badge" style="display:none;position:absolute;top:6px;right:calc(50% - 16px);width:8px;height:8px;border-radius:50%;background:var(--red);border:1.5px solid var(--bg)"></div>
+    </div>
+    <div class="nav-item" id="nav-stats" onclick="switchTab('stats')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Рост
+    </div>
+    <div class="nav-item" id="nav-settings" onclick="switchTab('settings')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Я
+    </div>
+  </nav>
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+
+<!-- MODAL: REFLECTION -->
+<div class="modal-overlay" id="modal-reflection">
+  <div class="modal">
+    <div class="modal-handle" onclick="closeModal('modal-reflection')"></div>
+    <div class="modal-title">🧠 Рефлексия</div>
+    <div class="modal-sub">Отвечай честно — ИИ обновит задачи на неделю</div>
+    <div class="pbar-wrap" style="margin-bottom:18px"><div class="pbar" id="refl-bar" style="width:0%;background:var(--accent)"></div></div>
+    <div id="refl-question-block">
+      <div class="refl-cat" id="refl-category"></div>
+      <div class="refl-q" id="refl-question"></div>
+      <div class="refl-hint" id="refl-hint"></div>
+      <textarea class="refl-ta" id="refl-answer" placeholder="Пиши честно, это только для тебя..."></textarea>
+    </div>
+    <div id="refl-ai-block" style="display:none;text-align:center;padding:28px 0">
+      <div style="font-size:40px;margin-bottom:12px">🤖</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text)">ИИ анализирует рефлексию</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:4px">Формирует задачи на неделю, месяц и квартал...</div>
+      <div style="margin-top:14px;font-size:24px;color:var(--accent);font-weight:900" id="refl-loading-dots">●●●</div>
+    </div>
+    <div id="refl-result-block" style="display:none"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end" id="refl-nav">
+      <button class="btn btn-ghost" id="refl-prev-btn" onclick="reflPrev()" style="display:none">← Назад</button>
+      <button class="btn btn-accent" id="refl-next-btn" onclick="reflNext()">Далее →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: BALANCE -->
+<div class="modal-overlay" id="modal-balance">
+  <div class="modal">
+    <div class="modal-handle" onclick="closeModal('modal-balance')"></div>
+    <div class="modal-title">Текущий баланс</div>
+    <div class="modal-sub">Введи сколько денег на всех счётах сейчас</div>
+    <div style="display:flex;gap:8px">
+      <input class="inp" type="number" id="balance-input" placeholder="Сумма" style="flex:1" min="0">
+      <button class="btn btn-accent" onclick="setBalance()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: REPORT -->
+<div class="modal-overlay" id="modal-report">
+  <div class="modal">
+    <div class="modal-handle" onclick="closeModal('modal-report')"></div>
+    <div class="modal-title" id="report-title">Отчёт</div>
+    <div id="report-summary" style="margin-bottom:14px"></div>
+    <div style="position:relative;height:190px"><canvas id="report-chart" role="img" aria-label="Расходы по категориям">Диаграмма</canvas></div>
+    <div id="report-cats" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════ CONSTANTS ══════════════
+const KEY='growth_v3';
+const LEVELS=[{n:'Новичок',xp:0},{n:'Игрок',xp:150},{n:'Боец',xp:400},{n:'Строитель',xp:800},{n:'Предприниматель',xp:1400},{n:'Лидер',xp:2200},{n:'Визионер',xp:3200},{n:'Легенда',xp:5000}];
+const DAY=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const CAT_COLORS=['#7C6EFF','#1FD984','#FFB020','#FF4F6A','#3EAAFF','#FF6EAA','#FF8C42','#2AC9A4','#888'];
+const CAT_RULES=[
+  {cat:'🍔 Еда',kw:['еда','food','cafe','кафе','ресторан','доставка','продукты','пицца','lunch','обед','ужин']},
+  {cat:'🚗 Транспорт',kw:['такси','taxi','uber','bolt','яндекс','metro','метро','bus','бензин','parking']},
+  {cat:'💪 Здоровье',kw:['gym','фитнес','fitness','аптека','врач','спорт','витамины']},
+  {cat:'📚 Обучение',kw:['курс','course','книга','book','udemy','учёба']},
+  {cat:'🎮 Развлечения',kw:['netflix','spotify','игры','cinema','кино','подписка']},
+  {cat:'💼 Бизнес',kw:['реклама','ads','хостинг','домен','инструмент','сервис']},
+  {cat:'🏠 Жильё',kw:['аренда','rent','коммунал','интернет','электричество']},
+  {cat:'💰 Накопления',kw:['накопление','сбережения','savings','отложил','инвестиции']},
+];
+const REFL_Q=[
+  {cat:'🌅 Состояние',q:'Как ты себя чувствуешь на этой неделе — честно, внутри?',hint:'Тревога, подъём, апатия, сила — не «нормально»'},
+  {cat:'💼 Работа/бизнес',q:'Что реально двигало тебя к цели? Что откладывал, хотя знал что надо?',hint:'Конкретное действие которое избегал. Почему?'},
+  {cat:'💪 Тело',q:'Как обращался с телом — спорт, сон, еда?',hint:'Где дисциплина, где срывы?'},
+  {cat:'🧠 Ум',q:'Что нового узнал или понял за неделю?',hint:'Книга, разговор, видео, ошибка — что зацепило?'},
+  {cat:'😮 Деструкторы',q:'Какие "яды" сработали? В какой момент тебя уводит?',hint:'Не осуждай — просто замечай паттерн'},
+  {cat:'🔥 Энергия',q:'В какой момент чувствовал себя живым и на подъёме?',hint:'Там твоя сила — зафиксируй'},
+  {cat:'🎯 Фокус',q:'Ты двигался к главной цели или просто был занят?',hint:'Занятость ≠ прогресс. Оцени честно'},
+  {cat:'🌟 Следующая неделя',q:'Одно действие которое даст максимальный результат на следующей неделе?',hint:'Не 20 пунктов. Одно главное + один паттерн который меняешь'},
+];
+const DESTRUCT_PRESETS={
+  smoking:{name:'Никотин/курение',icon:'🚬',xp:20},alcohol:{name:'Алкоголь',icon:'🍺',xp:25},porn:{name:'Порно/рукоблудие',icon:'🔞',xp:30},fastfood:{name:'Фастфуд',icon:'🍔',xp:15},scroll:{name:'Бесконечный скроллинг',icon:'📱',xp:10},reels:{name:'Reels/Shorts/TikTok',icon:'🎞️',xp:10},games:{name:'Игры (без пользы)',icon:'🎮',xp:15},drugs:{name:'Наркотики',icon:'💊',xp:40},gossip:{name:'Сплетни/нытьё',icon:'🗣️',xp:10},overeating:{name:'Переедание',icon:'🍩',xp:10},lazysleep:{name:'Сон до 10+ утра',icon:'😴',xp:15},netflix:{name:'Сериалы (бесконтрольно)',icon:'📺',xp:12},toxic:{name:'Токсичное общение',icon:'😤',xp:15},shopping:{name:'Импульсивные покупки',icon:'🛍️',xp:12},procrastinate:{name:'Прокрастинация >1ч',icon:'⏳',xp:20},
+};
+const ACHIEVEMENTS=[
+  {id:'first',name:'Первый шаг',icon:'🚀',check:s=>s.xp>0},
+  {id:'s3',name:'3 дня подряд',icon:'🔥',check:s=>s.streak>=3},
+  {id:'s7',name:'Неделя',icon:'⚡',check:s=>s.streak>=7},
+  {id:'s30',name:'Месяц',icon:'🏆',check:s=>s.streak>=30},
+  {id:'x500',name:'500 XP',icon:'💎',check:s=>s.xp>=500},
+  {id:'x1000',name:'1000 XP',icon:'👑',check:s=>s.xp>=1000},
+  {id:'no_destruct',name:'Чистый день',icon:'✨',check:s=>{const t=todayStr();return s.checked[t]&&Object.keys(s.destructDone[t]||{}).length===0}},
+  {id:'full_day',name:'Идеальный день',icon:'⭐',check:s=>{const t=todayStr();const c=s.checked[t]||{};return s.tasks.length>0&&s.tasks.every(tk=>c[tk.id])}},
+  {id:'refl',name:'Рефлексия',icon:'🧘',check:s=>Object.keys(s.reflections||{}).length>0},
+];
+
+// ══════════════ STATE ══════════════
+function todayStr(){return new Date().toISOString().slice(0,10)}
+function loadState(){
+  try{const s=localStorage.getItem(KEY);if(s)return JSON.parse(s);}catch(e){}
+  return null;
+}
+function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+let state=null;
+
+// ══════════════ ONBOARDING ══════════════
+let obStep=0;
+const OB_STEPS=['ob0','ob1','ob2','ob3','ob4','ob5'];
+let selectedSpheres=[];
+let selectedDestructs=[];
+let customDestructs=[];
+
+function toggleChip(el){
+  if(el.closest('#destruct-chips')||el.closest('#custom-destructs')){el.classList.toggle('selected');}
+  else {
+    const max=5;
+    if(!el.classList.contains('selected')&&el.closest('#spheres-chips').querySelectorAll('.selected').length>=max)return;
+    el.classList.toggle('selected');
+  }
+}
+function addCustomDestruct(){
+  const inp=document.getElementById('custom-destruct-inp');const v=inp.value.trim();if(!v)return;
+  const id='custom_'+Date.now();
+  customDestructs.push({id,name:v,icon:'⚠️',xp:15});
+  const wrap=document.getElementById('custom-destructs');
+  const chip=document.createElement('div');
+  chip.className='ob-chip danger selected';chip.dataset.val=id;chip.textContent='⚠️ '+v;
+  chip.onclick=function(){this.classList.toggle('selected')};
+  wrap.appendChild(chip);
+  inp.value='';
+}
+
+function obNext(){
+  if(obStep===1){
+    const name=document.getElementById('ob-name').value.trim();
+    const goal=document.getElementById('ob-main-goal').value.trim();
+    if(!name||!goal){showToast('Заполни имя и цель','info');return;}
+  }
+  if(obStep===2){
+    selectedSpheres=[...document.querySelectorAll('#spheres-chips .selected')].map(el=>el.dataset.val);
+    if(selectedSpheres.length<1){showToast('Выбери хотя бы 1 сферу','info');return;}
+  }
+  obStep++;
+  OB_STEPS.forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(el)el.classList.toggle('active',i===obStep);
+  });
+  updateObProgress();
+}
+
+function updateObProgress(){
+  [1,2,3,4].forEach(i=>{
+    const el=document.getElementById('ob-prog'+( i>1?i:''));
+    if(!el)return;
+    el.innerHTML='';
+    for(let j=1;j<=4;j++){
+      const d=document.createElement('div');
+      d.className='ob-dot'+(j<i?'  done':j===i?' active':'');
+      el.appendChild(d);
+    }
+  });
+}
+
+async function obGenerate(){
+  const name=document.getElementById('ob-name').value.trim();
+  const mainGoal=document.getElementById('ob-main-goal').value.trim();
+  selectedSpheres=[...document.querySelectorAll('#spheres-chips .selected')].map(el=>el.dataset.val);
+  const blockers=document.getElementById('ob-blockers').value.trim();
+  const occupation=document.getElementById('ob-occupation').value.trim();
+  const whereNow=document.getElementById('ob-where').value.trim();
+  const dailyTime=document.getElementById('ob-daily-time').value.trim();
+  selectedDestructs=[...document.querySelectorAll('#destruct-chips .selected')].map(el=>el.dataset.val);
+
+  obStep=5;OB_STEPS.forEach((id,i)=>{const el=document.getElementById(id);if(el)el.classList.toggle('active',i===5);});
+
+  const sphereNames={business:'Бизнес/Карьера',money:'Финансы',body:'Тело/Здоровье',mind:'Ум/Саморазвитие',relations:'Отношения',creativity:'Творчество',social:'Соцсети/Контент',sport:'Спорт',spiritual:'Духовность',travel:'Путешествия'};
+  const spheresList=selectedSpheres.map(s=>sphereNames[s]||s).join(', ');
+
+  const destructInfo=selectedDestructs.map(id=>DESTRUCT_PRESETS[id]?DESTRUCT_PRESETS[id].name:id).join(', ');
+
+  const prompt=`Создай персональный трекер роста для человека:
+Имя: ${name}
+Занятие: ${occupation||'не указано'}
+Главная цель на год: ${mainGoal}
+Где сейчас: ${whereNow||'не указано'}
+Сферы роста: ${spheresList}
+Тормозит: ${blockers||'не указано'}
+Готов уделять: ${dailyTime||'не указано'}
+Деструкторы: ${destructInfo||'не выбраны'}
+
+Ответь ТОЛЬКО в JSON без markdown:
+{
+  "greeting": "персональное приветствие 1-2 предложения с именем, отражающее его цель",
+  "tasks": [
+    {"id":"t1","text":"конкретная задача","sub":"почему это важно","xp":15,"sector":"Название сферы"},
+    ...ещё 6-10 задач по выбранным сферам, очень конкретные под цель человека
+  ],
+  "weekTasks": ["задача на неделю 1", "задача на неделю 2", "задача на неделю 3"],
+  "monthTasks": ["задача на месяц 1", "задача на месяц 2"],
+  "quarterTasks": ["задача на квартал 1", "задача на квартал 2"],
+  "goals": [
+    {"name":"Конкретная цель из его ответов","target":100,"key":"g1"},
+    {"name":"Ещё цель","target":100,"key":"g2"},
+    {"name":"Ещё цель","target":100,"key":"g3"}
+  ],
+  "weekly_focus": "главный фокус первой недели",
+  "affirmation": "персональный якорь-фраза на основе его цели"
+}
+Задачи должны быть КОНКРЕТНЫМИ под этого человека, не общими. XP: 5-30 в зависимости от важности. Секторы только из его выбранных сфер.`;
+
+  try{
+    let dots=0;const dotEl=document.getElementById('ob-dots');
+    const dt=setInterval(()=>{dots=(dots+1)%5;dotEl.textContent='●'.repeat(dots+1)+'○'.repeat(4-dots);},350);
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,
+        messages:[{role:'user',content:prompt}]})
+    });
+    const data=await res.json();
+    clearInterval(dt);
+    const text=data.content.map(i=>i.text||'').join('');
+    const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+
+    // Build destructors list
+    const destructors=selectedDestructs.map(id=>DESTRUCT_PRESETS[id]||null).filter(Boolean);
+    customDestructs.filter(c=>{
+      const chip=document.querySelector(`[data-val="${c.id}"]`);
+      return chip&&chip.classList.contains('selected');
+    }).forEach(c=>destructors.push(c));
+
+    state={
+      name,mainGoal,occupation,spheres:selectedSpheres,
+      xp:0,streak:0,startDate:todayStr(),history:[],
+      checked:{},destructDone:{},
+      energy:{},
+      tasks:parsed.tasks||[],
+      destructors,
+      weekTasks:(parsed.weekTasks||[]).map((t,i)=>({id:'wk'+i,text:t,done:false})),
+      monthTasks:(parsed.monthTasks||[]).map((t,i)=>({id:'mo'+i,text:t,done:false})),
+      quarterTasks:(parsed.quarterTasks||[]).map((t,i)=>({id:'q'+i,text:t,done:false})),
+      goals:(parsed.goals||[]).map(g=>({...g,progress:0})),
+      weekly_focus:parsed.weekly_focus||'Сфокусируйся на главной цели',
+      affirmation:parsed.affirmation||'',
+      greeting:parsed.greeting||'',
+      reflections:{},finance:{income:0,expense:0,save:0,log:[],balance:0},
+      weeklyAITasks:null,
+    };
+    saveState();
+    document.getElementById('onboard').style.display='none';
+    initApp();
+  }catch(e){
+    document.querySelector('#ob5 .ob-generating p').textContent='Ошибка: '+e.message+'. Перезагрузи страницу.';
+    document.getElementById('ob-dots').textContent='';
+  }
+}
+
+// ══════════════ NAV / TABS ══════════════
+function switchTab(tab){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('screen-'+tab).classList.add('active');
+  document.getElementById('nav-'+tab).classList.add('active');
+  if(tab==='stats')renderStats();
+  if(tab==='plan')renderPlan();
+  if(tab==='finance')renderFinance();
+  if(tab==='settings'){renderSettings();setTimeout(renderPushCard,50);}
+  if(tab==='coach')initCoachScreen();
+}
+
+let curHorizon='week';
+function switchHorizon(h,el){
+  curHorizon=h;
+  document.querySelectorAll('.htab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderPlan();
+}
+
+// ══════════════ RENDER ══════════════
+function getLevel(xp){let l=0;for(let i=0;i<LEVELS.length;i++){if(xp>=LEVELS[i].xp)l=i;}return l;}
+function getMondayOfWeek(ds){const d=new Date(ds);const day=d.getDay();const diff=day===0?-6:1-day;d.setDate(d.getDate()+diff);return d;}
+
+function renderXP(){
+  const lvl=getLevel(state.xp);
+  const cur=LEVELS[lvl].xp;
+  const next=lvl===LEVELS.length-1?LEVELS[lvl].xp+1:LEVELS[lvl+1].xp;
+  const pct=lvl===LEVELS.length-1?100:Math.round((state.xp-cur)/(next-cur)*100);
+  const name=LEVELS[lvl].n;
+  document.getElementById('lvl-badge').textContent='★ '+name;
+  document.getElementById('lvl-name').textContent=name;
+  document.getElementById('lvl-num').textContent=lvl+1;
+  document.getElementById('xp-cur').textContent=state.xp;
+  document.getElementById('xp-next').textContent=next;
+  document.getElementById('xp-bar').style.width=pct+'%';
+  document.getElementById('total-xp-top').textContent=state.xp;
+}
+
+function renderGreeting(){
+  const hour=new Date().getHours();
+  const greet=hour<12?'Доброе утро':hour<18?'Добрый день':'Добрый вечер';
+  const el=document.getElementById('greeting-title');
+  if(el)el.innerHTML=greet+', <em>'+state.name.split(' ')[0]+'</em>';
+}
+
+function renderStreak(){
+  document.getElementById('streak-hero').textContent=state.streak+'🔥';
+  const today=todayStr();const monday=getMondayOfWeek(today);const row=document.getElementById('streak-row');row.innerHTML='';
+  for(let i=0;i<7;i++){
+    const d=new Date(monday);d.setDate(monday.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    const isDone=state.history.includes(ds);const isToday=ds===today;const isFut=ds>today;
+    const hasBad=Object.keys(state.destructDone[ds]||{}).length>0&&!isFut;
+    const div=document.createElement('div');
+    div.className='sday '+(isFut?'empty':isToday?'today':isDone?(hasBad?'bad':'done'):'empty');
+    div.innerHTML='<span class="dn">'+DAY[i]+'</span><span class="dd">'+d.getDate()+'</span>';
+    row.appendChild(div);
+  }
+  const start=new Date(state.startDate);const now=new Date(today);
+  const daysPassed=Math.max(1,Math.floor((now-start)/86400000)+1);
+  document.getElementById('day-num').textContent=Math.min(daysPassed,365);
+}
+
+function getActiveTasks(){
+  if(state.weeklyAITasks&&state.weeklyAITasks.length>0)return state.weeklyAITasks;
+  return state.tasks||[];
+}
+
+function renderTasks(){
+  const tasks=getActiveTasks();const today=todayStr();const checked=state.checked[today]||{};
+  let total=0,done=0;
+
+  // Group by sector
+  const sectors={};
+  tasks.forEach(t=>{
+    if(!sectors[t.sector])sectors[t.sector]=[];
+    sectors[t.sector].push(t);total++;if(checked[t.id])done++;
+  });
+
+  const sectorColors={'Бизнес/Карьера':'sg','Финансы':'sa','Тело/Здоровье':'sp','Ум/Саморазвитие':'sb','Отношения':'sk','Творчество':'sp','Соцсети/Контент':'sg','Спорт':'sg','Духовность':'sa','Ум':'sb'};
+
+  const wrap=document.getElementById('positive-tasks-wrap');wrap.innerHTML='';
+  Object.keys(sectors).forEach(sec=>{
+    const tag=document.createElement('div');tag.className='stag '+(sectorColors[sec]||'sb');tag.textContent=sec;wrap.appendChild(tag);
+    sectors[sec].forEach(t=>{
+      const isDone=!!checked[t.id];
+      const card=document.createElement('div');card.className='task-card'+(isDone?' done':'');
+      card.onclick=()=>toggleTask(t.id,t.xp,false);
+      const cb=document.createElement('div');cb.className='cb'+(isDone?' yes':'');
+      const info=document.createElement('div');info.style.flex='1';
+      info.innerHTML='<div class="tname">'+t.text+'</div><div class="tsub">'+t.sub+'</div>';
+      const badge=document.createElement('div');badge.className='xpb xpb-pos';badge.textContent='+'+t.xp+' XP';
+      card.appendChild(cb);card.appendChild(info);card.appendChild(badge);wrap.appendChild(card);
+    });
+  });
+
+  // Destructors
+  const destructWrap=document.getElementById('destruct-tasks-wrap');destructWrap.innerHTML='';
+  const destructDoneToday=state.destructDone[today]||{};
+  (state.destructors||[]).forEach(t=>{
+    const isActive=!!destructDoneToday[t.id];
+    const card=document.createElement('div');card.className='task-card destruct'+(isActive?' active-bad':'');
+    card.onclick=()=>toggleTask(t.id,t.xp,true);
+    const cb=document.createElement('div');cb.className='cb'+(isActive?' bad':'');
+    const info=document.createElement('div');info.style.flex='1';
+    info.innerHTML='<div class="tname">'+(t.icon||'⚠️')+' '+t.name+'</div><div class="tsub">'+( isActive?'Отмечено сегодня — честный шаг к осознанности':'Нажми если сорвался')+'</div>';
+    const badge=document.createElement('div');badge.className='xpb xpb-neg';badge.textContent='-'+t.xp+' XP';
+    card.appendChild(cb);card.appendChild(info);card.appendChild(badge);destructWrap.appendChild(card);
+  });
+
+  document.getElementById('done-today').textContent=done+'/'+total;
+  const pct=total>0?Math.round(done/total*100):0;
+  const circ=289;const offset=circ-(circ*pct/100);
+  document.getElementById('day-ring').style.strokeDashoffset=offset;
+  document.getElementById('day-ring').style.stroke=pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
+  document.getElementById('day-score-pct').textContent=pct+'%';
+}
+
+function toggleTask(id,xp,isDestruct){
+  const today=todayStr();
+  if(isDestruct){
+    if(!state.destructDone[today])state.destructDone[today]={};
+    const was=state.destructDone[today][id];
+    state.destructDone[today][id]=!was;
+    if(!was){state.xp=Math.max(0,state.xp-xp);showToast('-'+xp+' XP · Зафиксировано. Осознанность — первый шаг','neg');}
+    else{state.xp+=xp;showToast('+'+xp+' XP · Убрано','pos');}
+  }else{
+    if(!state.checked[today])state.checked[today]={};
+    const was=state.checked[today][id];
+    state.checked[today][id]=!was;
+    if(!was){state.xp+=xp;showToast('+'+xp+' XP','pos');checkDayComplete(today);}
+    else{state.xp=Math.max(0,state.xp-xp);}
+  }
+  saveState();renderAll();
+}
+
+function checkDayComplete(today){
+  const tasks=getActiveTasks();const checked=state.checked[today]||{};
+  const done=tasks.filter(t=>checked[t.id]).length;
+  if(done>=Math.floor(tasks.length*0.8)&&!state.history.includes(today)){
+    state.history.push(today);
+    const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+    const ys=yesterday.toISOString().slice(0,10);
+    if(state.history.includes(ys)||state.streak===0)state.streak++;
+    else state.streak=1;
+    showToast('День засчитан! Серия: '+state.streak+'🔥','pos');
+  }
+}
+
+function renderGrowth(){
+  const tasks=getActiveTasks();const totalPerDay=tasks.length;const today=todayStr();
+  const checkedToday=state.checked[today]||{};
+  const doneToday=tasks.filter(t=>checkedToday[t.id]).length;
+  const rateToday=totalPerDay>0?doneToday/totalPerDay:0;
+  const pctToday=Math.round(rateToday*100);
+  let week7sum=0;
+  for(let i=1;i<=7;i++){
+    const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);
+    const c=state.checked[ds]||{};const done=tasks.filter(t=>c[t.id]).length;
+    week7sum+=done/(totalPerDay||1);
+  }
+  const pctWeek=Math.round(week7sum/7*100);
+  const allDays=Object.keys(state.checked).sort();
+  let multiplier=1;
+  allDays.forEach(ds=>{
+    const c=state.checked[ds]||{};const dd=state.destructDone[ds]||{};
+    const done=tasks.filter(t=>c[t.id]).length;const rate=done/(totalPerDay||1);
+    // destructors reduce the daily gain
+    const destructPenalty=Object.keys(dd).length*0.005;
+    const gain=Math.max(0,0.01*rate-destructPenalty);
+    if(rate>0||Object.keys(dd).length>0)multiplier*=(1+gain);
+  });
+  const target=37.78;const yearPct=Math.min(100,Math.round((multiplier-1)/(target-1)*100));
+  document.getElementById('growth-big').textContent='×'+multiplier.toFixed(3);
+  document.getElementById('growth-today').textContent=(pctToday>=0?'+':'')+pctToday+'%';
+  document.getElementById('growth-today').style.color=pctToday>=80?'var(--green)':pctToday>=50?'var(--amber)':'var(--red)';
+  document.getElementById('growth-week').textContent=(pctWeek>=0?'+':'')+pctWeek+'%';
+  document.getElementById('streak-hero').textContent=state.streak+'🔥';
+  document.getElementById('growth-year-pct').textContent=yearPct+'%';
+  document.getElementById('growth-year-bar').style.width=yearPct+'%';
+  document.getElementById('growth-desc').textContent=allDays.length===0?'Начни отмечать задачи':'за '+allDays.length+' '+(allDays.length===1?'день':allDays.length<5?'дня':'дней');
+  document.getElementById('stats-mult').textContent='×'+multiplier.toFixed(3);
+  document.getElementById('stats-year-bar').style.width=yearPct+'%';
+  document.getElementById('stats-year-pct').textContent=yearPct+'%';
+}
+
+function renderPlan(){
+  const h=curHorizon;
+  const tasks=h==='week'?state.weekTasks:h==='month'?state.monthTasks:state.quarterTasks;
+  const wrap=document.getElementById('horizon-content');wrap.innerHTML='';
+  const label=h==='week'?'Задачи недели':h==='month'?'Задачи месяца':'Задачи квартала';
+  const sec=document.createElement('div');sec.className='sec';sec.textContent=label;wrap.appendChild(sec);
+  const card=document.createElement('div');card.className='card';
+  if(!tasks||tasks.length===0){card.innerHTML='<div style="font-size:13px;color:var(--text2);text-align:center;padding:12px 0">Задачи появятся после рефлексии</div>';wrap.appendChild(card);return;}
+  tasks.forEach(t=>{
+    const row=document.createElement('div');row.className='horizon-task';
+    const circle=document.createElement('div');circle.className='h-circle'+(t.done?' done':'');
+    circle.onclick=()=>{t.done=!t.done;saveState();renderPlan();};
+    const info=document.createElement('div');info.style.flex='1';
+    info.innerHTML='<div style="font-size:14px;font-weight:700;color:'+(t.done?'var(--text2)':'var(--text)')+';">'+(t.done?'<s>':'')+t.text+(t.done?'</s>':'')+'</div>';
+    row.appendChild(circle);row.appendChild(info);card.appendChild(row);
+  });
+  wrap.appendChild(card);
+  // Goals
+  const gb=document.getElementById('goals-block');gb.innerHTML='';
+  (state.goals||[]).forEach(g=>{
+    const pct=Math.min(100,Math.round((g.progress||0)/g.target*100));
+    const row=document.createElement('div');row.className='goal-row';
+    row.innerHTML='<div class="goal-name">'+g.name+'</div>'
+      +'<div class="goal-bar-bg"><div class="goal-bar" style="width:'+pct+'%"></div></div>'
+      +'<div class="goal-pct">'+pct+'%</div>';
+    gb.appendChild(row);
+  });
+}
+
+function renderSettings(){
+  const el1=document.getElementById('profile-name');if(el1)el1.textContent=state.name||'—';
+  const el2=document.getElementById('profile-goal-short');if(el2)el2.textContent=(state.mainGoal||'').slice(0,60)+(state.mainGoal&&state.mainGoal.length>60?'...':'');
+  const av=document.getElementById('avatar-initial');if(av)av.textContent=(state.name||'?')[0].toUpperCase();
+  const lr=document.getElementById('last-reflection-info');
+  const keys=Object.keys(state.reflections||{}).sort();
+  if(lr)lr.textContent=keys.length>0?'Рефлексия: '+new Date(state.reflections[keys[keys.length-1]].date+'T00:00:00').toLocaleDateString('ru',{day:'numeric',month:'long'}):'Рефлексия не проводилась';
+}
+
+function renderSectors(){
+  const tasks=getActiveTasks();const sectors={};const today=todayStr();const checked=state.checked[today]||{};
+  tasks.forEach(t=>{if(!sectors[t.sector])sectors[t.sector]={total:0,done:0};sectors[t.sector].total++;if(checked[t.id])sectors[t.sector].done++;});
+  const wrap=document.getElementById('sectors');wrap.innerHTML='';
+  const colors=['var(--green)','var(--amber)','var(--accent)','var(--blue)','var(--pink)'];
+  Object.keys(sectors).forEach((sec,i)=>{
+    const st=sectors[sec];const pct=st.total>0?Math.round(st.done/st.total*100):0;
+    const card=document.createElement('div');card.className='sec-card';
+    const col=colors[i%colors.length];
+    card.innerHTML='<div class="sec-name">'+sec+'</div>'
+      +'<div class="sec-pct" style="color:'+col+'">'+pct+'%</div>'
+      +'<div class="pbar-wrap"><div class="pbar" style="width:'+pct+'%;background:'+col+'"></div></div>'
+      +'<div class="sec-days" style="color:'+col+'">'+st.done+'/'+st.total+' сегодня</div>';
+    wrap.appendChild(card);
+  });
+}
+
+function renderAchievements(){
+  const grid=document.getElementById('achievements-grid');if(!grid)return;grid.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{
+    let unlocked=false;try{unlocked=a.check(state);}catch(e){}
+    const div=document.createElement('div');div.className='ach'+(unlocked?' unlocked':'');
+    div.innerHTML='<div class="ach-icon" style="opacity:'+(unlocked?1:.25)+'">'+a.icon+'</div><div class="ach-name">'+a.name+'</div>';
+    grid.appendChild(div);
+  });
+}
+
+function renderPatterns(){
+  const el=document.getElementById('patterns-block');if(!el)return;
+  const days=Object.keys(state.energy||{}).sort().slice(-14);
+  if(days.length<3){el.textContent='Нужно больше данных (3+ дней)';return;}
+  const highEnergy=days.filter(d=>(state.energy[d]||0)>=4);
+  const lowEnergy=days.filter(d=>(state.energy[d]||0)<=2);
+  el.innerHTML='<div style="margin-bottom:8px"><b style="color:var(--green)">🔥 Лучшие дни: </b>'+( highEnergy.length?highEnergy.slice(-3).map(d=>new Date(d+'T00:00:00').toLocaleDateString('ru',{weekday:'short',day:'numeric'})).join(', '):'пока нет')+'</div>'
+    +'<div><b style="color:var(--red)">😵 Низкая энергия: </b>'+( lowEnergy.length?lowEnergy.slice(-3).map(d=>new Date(d+'T00:00:00').toLocaleDateString('ru',{weekday:'short',day:'numeric'})).join(', '):'отлично, не было')+'</div>';
+}
+
+let histChart=null;
+function renderHistoryChart(){
+  const tasks=getActiveTasks();const labels=[];const data=[];const destData=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);
+    const c=state.checked[ds]||{};const dd=state.destructDone[ds]||{};
+    const done=tasks.filter(t=>c[t.id]).length;
+    labels.push(DAY[(d.getDay()+6)%7]);
+    data.push(tasks.length>0?Math.round(done/tasks.length*100):0);
+    destData.push(Object.keys(dd).length*10);
+  }
+  const ctx=document.getElementById('history-chart');
+  if(histChart)histChart.destroy();
+  histChart=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Выполнено %',data,backgroundColor:data.map(v=>v>=80?'#1FD984':v>=50?'#FFB020':'#FF4F6A'),borderRadius:6,borderWidth:0},
+      {label:'Деструкторы',data:destData,backgroundColor:'rgba(255,79,106,.25)',borderRadius:6,borderWidth:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:0,max:100,ticks:{color:'#7777AA',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+        x:{ticks:{color:'#7777AA',font:{size:11,weight:700}},grid:{display:false}}}}
+  });
+}
+
+function renderStats(){renderSectors();renderAchievements();renderGrowth();renderHistoryChart();renderPatterns();}
+
+// ══════════════ ENERGY ══════════════
+function setEnergy(val){
+  const today=todayStr();
+  if(!state.energy)state.energy={};
+  state.energy[today]=val;
+  document.querySelectorAll('.mood-btn').forEach((b,i)=>{b.classList.toggle('active',i+1===val);});
+  saveState();
+  showToast('Энергия: '+['','😵 На нуле','😔 Слабо','😐 Нормально','😊 Хорошо','🔥 На пике'][val],'info');
+}
+
+function renderEnergy(){
+  const today=todayStr();const val=state.energy&&state.energy[today];
+  if(val){document.querySelectorAll('.mood-btn').forEach((b,i)=>{b.classList.toggle('active',i+1===val);});}
+}
+
+// ══════════════ FINANCE ══════════════
+function detectCat(desc){if(!desc)return'❓ Другое';const low=desc.toLowerCase();for(const r of CAT_RULES){for(const kw of r.kw){if(low.includes(kw))return r.cat;}}return'❓ Другое';}
+
+function renderFinance(){
+  const f=state.finance;const bal=f.balance||0;
+  document.getElementById('fin-balance').textContent=(bal>=0?'':'-')+'$'+Math.abs(bal).toLocaleString();
+  document.getElementById('fin-balance').style.color=bal>=0?'var(--text)':'var(--red)';
+  document.getElementById('fin-income').textContent='$'+f.income.toLocaleString();
+  document.getElementById('fin-expense').textContent='$'+f.expense.toLocaleString();
+  document.getElementById('fin-save').textContent='$'+f.save.toLocaleString();
+  const target=Math.round(f.income*0.1);const pct=target>0?Math.min(100,Math.round(f.save/target*100)):0;
+  const pc=pct>=100?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
+  document.getElementById('fin-save-pct').textContent=pct+'%';document.getElementById('fin-save-pct').style.color=pc;
+  document.getElementById('fin-save-target').textContent='цель $'+target;
+  document.getElementById('fin-save-bar').style.width=pct+'%';document.getElementById('fin-save-bar').style.background=pc;
+  const log=document.getElementById('fin-log');const recent=(f.log||[]).slice(-8).reverse();
+  log.innerHTML='';
+  if(!recent.length){log.innerHTML='<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px 0">Нет операций</div>';return;}
+  recent.forEach(e=>{
+    const row=document.createElement('div');row.className='fin-row';
+    const tc=e.type==='income'?'fi':e.type==='expense'?'fe':'fs';
+    const tl=e.type==='income'?'Приход':e.type==='expense'?'Расход':'Накопл.';
+    row.innerHTML='<span class="fin-type-badge '+tc+'" style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0">'+tl+'</span>'
+      +'<span style="flex:1;color:var(--text2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(e.desc||'—')+'</span>'
+      +'<span style="font-weight:800;font-size:14px;white-space:nowrap">'+(e.type==='expense'?'-':'+')+'$'+e.amount.toLocaleString()+'</span>';
+    log.appendChild(row);
+  });
+}
+function addFinance(){
+  const type=document.getElementById('fin-type').value;
+  const amount=parseInt(document.getElementById('fin-amount').value)||0;
+  const desc=document.getElementById('fin-desc').value||'';
+  if(amount<=0)return;
+  if(!state.finance.log)state.finance.log=[];
+  const cat=detectCat(desc);
+  state.finance.log.push({type,amount,desc,cat,date:todayStr()});
+  if(type==='income'){state.finance.income+=amount;state.finance.balance+=amount;}
+  else if(type==='expense'){state.finance.expense+=amount;state.finance.balance-=amount;}
+  else{state.finance.save+=amount;state.finance.balance-=amount;}
+  document.getElementById('fin-amount').value='';document.getElementById('fin-desc').value='';
+  showToast(cat+' · '+(type==='expense'?'-':'+')+'$'+amount,'info');
+  saveState();renderFinance();
+}
+function openSetBalance(){document.getElementById('balance-input').value=state.finance.balance||'';openModal('modal-balance');}
+function setBalance(){const v=parseFloat(document.getElementById('balance-input').value)||0;state.finance.balance=v;closeModal('modal-balance');saveState();renderFinance();showToast('Баланс: $'+v.toLocaleString(),'pos');}
+function openMonthReport(){
+  const now=new Date();const mk=now.toISOString().slice(0,7);
+  const log=(state.finance.log||[]).filter(e=>e.date&&e.date.startsWith(mk));
+  const tI=log.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0);
+  const tE=log.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);
+  const tS=log.filter(e=>e.type==='save').reduce((s,e)=>s+e.amount,0);
+  const cats={};log.filter(e=>e.type==='expense').forEach(e=>{const c=e.cat||detectCat(e.desc);cats[c]=(cats[c]||0)+e.amount;});
+  const mn=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  document.getElementById('report-title').textContent='Отчёт: '+mn[now.getMonth()]+' '+now.getFullYear();
+  const sr=tI>0?Math.round(tS/tI*100):0;const sc=sr>=10?'var(--green)':sr>=5?'var(--amber)':'var(--red)';
+  document.getElementById('report-summary').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    +'<div class="fin-stat"><div class="fin-sl">Приход</div><div class="fin-sv" style="color:var(--green)">$'+tI.toLocaleString()+'</div></div>'
+    +'<div class="fin-stat"><div class="fin-sl">Расход</div><div class="fin-sv" style="color:var(--red)">$'+tE.toLocaleString()+'</div></div>'
+    +'<div class="fin-stat"><div class="fin-sl">Накоплено</div><div class="fin-sv" style="color:var(--blue)">$'+tS.toLocaleString()+'</div></div>'
+    +'<div class="fin-stat"><div class="fin-sl">% накоплений</div><div class="fin-sv" style="color:'+sc+'">'+sr+'%</div></div>'
+    +'</div>';
+  const ck=Object.keys(cats);const cv=ck.map(k=>cats[k]);
+  const ctx=document.getElementById('report-chart');if(window._rc)window._rc.destroy();
+  if(ck.length){ctx.style.display='block';window._rc=new Chart(ctx,{type:'doughnut',data:{labels:ck,datasets:[{data:cv,backgroundColor:CAT_COLORS.slice(0,ck.length),borderWidth:0}]},options:{plugins:{legend:{display:false}},cutout:'65%',responsive:true,maintainAspectRatio:false}});}
+  else ctx.style.display='none';
+  document.getElementById('report-cats').innerHTML=ck.sort((a,b)=>cats[b]-cats[a]).map((cat,i)=>{const pct=tE>0?Math.round(cats[cat]/tE*100):0;return'<div class="rep-cat"><span style="width:10px;height:10px;border-radius:50%;background:'+CAT_COLORS[i%CAT_COLORS.length]+';display:inline-block;flex-shrink:0"></span><span style="flex:1;font-weight:700">'+cat+'</span><span style="color:var(--text2)">'+pct+'%</span><span style="font-weight:800;min-width:56px;text-align:right">$'+cats[cat].toLocaleString()+'</span></div>';}).join('');
+  openModal('modal-report');
+}
+
+// ══════════════ REFLECTION ══════════════
+let reflStep=0,reflAnswers=[];
+function getWeekKey(){return getMondayOfWeek(todayStr()).toISOString().slice(0,10);}
+function openReflection(){
+  reflStep=0;reflAnswers=new Array(REFL_Q.length).fill('');
+  const wk=getWeekKey();if(state.reflections[wk])reflAnswers=state.reflections[wk].answers||reflAnswers;
+  ['refl-ai-block','refl-result-block'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('refl-question-block').style.display='block';
+  document.getElementById('refl-nav').style.display='flex';
+  document.getElementById('refl-prev-btn').style.display='none';
+  document.getElementById('refl-next-btn').textContent='Далее →';
+  document.getElementById('refl-next-btn').onclick=reflNext;
+  openModal('modal-reflection');renderReflStep();
+}
+function renderReflStep(){
+  const q=REFL_Q[reflStep];const total=REFL_Q.length;
+  document.getElementById('refl-bar').style.width=Math.round(reflStep/total*100)+'%';
+  document.getElementById('refl-category').textContent=q.cat;
+  document.getElementById('refl-question').textContent=q.q;
+  document.getElementById('refl-hint').textContent=q.hint;
+  document.getElementById('refl-answer').value=reflAnswers[reflStep]||'';
+  document.getElementById('refl-prev-btn').style.display=reflStep>0?'block':'none';
+  document.getElementById('refl-next-btn').textContent=reflStep===total-1?'Завершить ✨':'Далее →';
+  setTimeout(()=>document.getElementById('refl-answer').focus(),150);
+}
+function reflPrev(){reflAnswers[reflStep]=document.getElementById('refl-answer').value;reflStep--;renderReflStep();}
+function reflNext(){
+  reflAnswers[reflStep]=document.getElementById('refl-answer').value;
+  if(reflStep<REFL_Q.length-1){reflStep++;renderReflStep();}
+  else submitReflection();
+}
+
+async function submitReflection(){
+  document.getElementById('refl-question-block').style.display='none';
+  document.getElementById('refl-nav').style.display='none';
+  document.getElementById('refl-ai-block').style.display='block';
+  let dots=0;const dotEl=document.getElementById('refl-loading-dots');
+  const dt=setInterval(()=>{dots=(dots+1)%4;dotEl.textContent='●'.repeat(dots+1)+'○'.repeat(3-dots);},400);
+  const wk=getWeekKey();
+  if(!state.reflections)state.reflections={};
+  state.reflections[wk]={answers:reflAnswers,date:todayStr()};
+  const tasks=getActiveTasks();
+  let prompt='Пользователь: '+state.name+'\nЦель: '+state.mainGoal+'\nОкружение: '+state.occupation+'\nОтветы на рефлексию:\n\n';
+  REFL_Q.forEach((q,i)=>{prompt+=q.cat+'\n'+q.q+'\n'+(reflAnswers[i]||'(нет ответа)')+'\n\n';});
+  prompt+='Текущие задачи пользователя:\n'+tasks.map(t=>t.text).join('\n');
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,
+        system:`Ты личный ИИ-коуч. Ответь ТОЛЬКО в JSON без markdown:
+{"insight":"2-3 предложения — главное из рефлексии, прямо и честно","pattern":"1 паттерн который повторяется и мешает","energy":"что зажигает этого человека","tasks":[{"id":"w1","text":"конкретная задача","sub":"почему сейчас","xp":20,"sector":"..."},...],"weekTasks":["задача 1","задача 2","задача 3"],"monthTasks":["задача 1","задача 2"],"quarterTasks":["задача 1","задача 2"],"weekly_focus":"главный фокус недели","stop_doing":"один паттерн остановить","affirmation":"персональная фраза-якорь"}
+Задачи должны быть КОНКРЕТНЫ под этого человека и его рефлексию. XP 5-35. Секторы из его сфер.`,
+        messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();clearInterval(dt);
+    const text=data.content.map(i=>i.text||'').join('');
+    const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+    if(parsed){
+      state.reflections[wk].aiResult=parsed;
+      if(parsed.tasks&&parsed.tasks.length>0)state.weeklyAITasks=parsed.tasks;
+      if(parsed.weekTasks)state.weekTasks=parsed.weekTasks.map((t,i)=>({id:'wk'+Date.now()+i,text:t,done:false}));
+      if(parsed.monthTasks)state.monthTasks=parsed.monthTasks.map((t,i)=>({id:'mo'+Date.now()+i,text:t,done:false}));
+      if(parsed.quarterTasks)state.quarterTasks=parsed.quarterTasks.map((t,i)=>({id:'q'+Date.now()+i,text:t,done:false}));
+      if(parsed.weekly_focus)state.weekly_focus=parsed.weekly_focus;
+      saveState();showReflResult(parsed);
+    }else showReflError();
+  }catch(e){clearInterval(dt);showReflError();}
+}
+
+function showReflResult(r){
+  document.getElementById('refl-ai-block').style.display='none';
+  document.getElementById('refl-result-block').style.display='block';
+  document.getElementById('refl-nav').style.display='flex';
+  document.getElementById('refl-prev-btn').style.display='none';
+  document.getElementById('refl-next-btn').textContent='Применить →';
+  document.getElementById('refl-next-btn').onclick=()=>{closeModal('modal-reflection');renderAll();showToast('Задачи обновлены ИИ ✨','pos');};
+  const sColor={biz:'var(--green)',monk:'var(--amber)',body:'var(--accent)',mind:'var(--blue)'};
+  const tasksHtml=(r.tasks||[]).map(t=>`<div class="ai-task-row"><div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px"></div><div style="flex:1"><div style="font-size:14px;font-weight:700">${t.text}</div><div style="font-size:12px;color:var(--text2);margin-top:2px">${t.sub}</div></div><div style="font-size:11px;font-weight:800;color:var(--accent);background:var(--accent-glow);border:1px solid var(--accent);padding:3px 8px;border-radius:20px;white-space:nowrap">+${t.xp}</div></div>`).join('');
+  document.getElementById('refl-result-block').innerHTML=`
+    <div class="ai-insight"><div style="font-size:10px;font-weight:800;color:var(--accent);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px">💡 Главный инсайт</div><div style="font-size:14px;line-height:1.55">${r.insight||''}</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="ai-block" style="background:var(--red-dim);border:1px solid rgba(255,79,106,.3)"><div class="ai-bl" style="color:var(--red)">🔄 Паттерн</div><div class="ai-bt">${r.pattern||''}</div></div>
+      <div class="ai-block" style="background:var(--green-dim);border:1px solid rgba(31,217,132,.3)"><div class="ai-bl" style="color:var(--green)">⚡ Энергия</div><div class="ai-bt">${r.energy||''}</div></div>
+    </div>
+    <div class="ai-block" style="background:var(--amber-dim);border:1px solid rgba(255,176,32,.3);margin-bottom:10px"><div class="ai-bl" style="color:var(--amber)">🎯 Фокус недели</div><div style="font-size:14px;font-weight:800;color:var(--text)">${r.weekly_focus||''}</div></div>
+    <div style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">📋 Новые задачи</div>
+    <div style="margin-bottom:10px">${tasksHtml}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="ai-block" style="background:var(--red-dim);border:1px solid rgba(255,79,106,.2)"><div class="ai-bl" style="color:var(--red)">⛔ Остановить</div><div class="ai-bt">${r.stop_doing||''}</div></div>
+      <div class="ai-block" style="background:var(--bg4)"><div class="ai-bl" style="color:var(--text2)">💬 Якорь</div><div class="ai-bt" style="font-style:italic">"${r.affirmation||''}"</div></div>
+    </div>`;
+}
+function showReflError(){
+  document.getElementById('refl-ai-block').style.display='none';
+  document.getElementById('refl-result-block').style.display='block';
+  document.getElementById('refl-result-block').innerHTML='<div style="text-align:center;padding:20px;color:var(--text2)">Ошибка ИИ. Ответы сохранены — попробуй позже.</div>';
+  document.getElementById('refl-nav').style.display='flex';
+  document.getElementById('refl-prev-btn').style.display='none';
+  document.getElementById('refl-next-btn').textContent='Закрыть';
+  document.getElementById('refl-next-btn').onclick=()=>closeModal('modal-reflection');
+}
+
+// ══════════════ WEEKLY FOCUS ══════════════
+function renderWeeklyFocus(){
+  const el=document.getElementById('weekly-focus-text');
+  if(el)el.textContent=state.weekly_focus||state.weeklyFocus||'Сфокусируйся на главной цели этой недели';
+}
+
+// ══════════════ TOAST / MODAL ══════════════
+let toastTimer=null;
+function showToast(msg,type='info'){
+  const t=document.getElementById('toast');t.textContent=msg;
+  t.className='toast '+type+' show';
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.addEventListener('click',e=>{if(e.target.classList.contains('modal-overlay'))e.target.classList.remove('open');});
+
+// ══════════════ EXPORT / IMPORT ══════════════
+function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='growth_backup_'+todayStr()+'.json';a.click();URL.revokeObjectURL(a.href);showToast('Данные экспортированы','pos');}
+function importData(){const input=document.createElement('input');input.type='file';input.accept='.json';input.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{state=JSON.parse(ev.target.result);saveState();renderAll();showToast('Данные импортированы','pos');}catch(err){showToast('Ошибка импорта','neg');}};r.readAsText(f);};input.click();}
+function resetConfirm(){if(confirm('Сбросить все данные и начать заново?')){localStorage.removeItem(KEY);location.reload();}}
+
+// ══════════════ RENDER ALL ══════════════
+function renderAll(){
+  renderXP();renderStreak();renderTasks();renderGrowth();renderWeeklyFocus();renderEnergy();
+}
+
+// ══════════════ PWA ══════════════
+const manifest={name:'Growth Tracker',short_name:'Growth',start_url:'./',display:'standalone',background_color:'#0A0A12',theme_color:'#0A0A12',icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='114' fill='%237C6EFF'/%3E%3Ctext x='50%25' y='54%25' font-size='280' text-anchor='middle' dominant-baseline='middle' fill='white'%3E⚡%3C/text%3E%3C/svg%3E",sizes:'512x512',type:'image/svg+xml'}]};
+const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+document.getElementById('pwa-manifest').href=URL.createObjectURL(blob);
+if('serviceWorker'in navigator){const sw=`self.addEventListener('install',e=>e.waitUntil(caches.open('gv3').then(c=>c.addAll(['./',location.href]))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));`;const sb=new Blob([sw],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(sb)).catch(()=>{});}
+
+// ══════════════ INIT ══════════════
+function initApp(){
+  renderGreeting();renderAll();
+  renderPlan();renderFinance();renderSettings();
+}
+
+// ══════════════ BOOT ══════════════
+state=loadState();
+if(state&&state.name&&state.tasks){
+  document.getElementById('onboard').style.display='none';
+  initApp();
+}
+// else onboarding shows by default
+</script>
+<!-- NOTIFICATION BANNER (in-app) -->
+<div id="notif-banner" style="display:none;position:fixed;top:calc(var(--safe-top) + 8px);left:12px;right:12px;z-index:300;background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--r-lg);padding:14px 16px;box-shadow:0 8px 40px rgba(0,0,0,.5);cursor:pointer" onclick="dismissBanner()">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <div id="notif-icon" style="font-size:28px;flex-shrink:0;line-height:1">🌌</div>
+    <div style="flex:1">
+      <div id="notif-title" style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px"></div>
+      <div id="notif-body" style="font-size:13px;color:var(--text2);line-height:1.45"></div>
+    </div>
+    <div style="font-size:18px;color:var(--text3);flex-shrink:0">×</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// ══  GROWTH v4 ADDITIONS: COACH + NOTIFICATIONS
+// ═══════════════════════════════════════════════
+
+// ── UNIVERSE MESSAGES ──
+const UNIVERSE_MSGS = [
+  "Всё, что ты ищешь снаружи, уже есть внутри тебя. Просто действуй.",
+  "Вселенная не даёт то, что ты хочешь. Она даёт то, кем ты становишься.",
+  "Каждый день — это новый шанс, который большинство людей тратят впустую. Ты — не большинство.",
+  "Тревога — это энергия, которая ищет направление. Дай ей цель.",
+  "Тишина между действиями — это не пустота. Это накопление.",
+  "Ты не опоздал. Ты именно там, где должен быть прямо сейчас.",
+  "Страх — это компас. Куда он указывает — туда и иди.",
+  "Твои предки выживали в условиях, которые ты не можешь себе представить. Ты справишься.",
+  "Маленькие последовательные шаги разрушают горы быстрее, чем редкие прыжки.",
+  "Когда ты устал — ты устал от мыслей, не от жизни. Выйди из головы.",
+  "Всё что тебе нужно уже двигается к тебе. Не мешай этому.",
+  "Ты не обязан быть готов. Ты обязан начать.",
+  "Боль роста проходит. Сожаление о бездействии — остаётся.",
+  "Самый важный момент — прямо сейчас. Не вчера, не завтра.",
+  "Вселенная работает через тебя, когда ты работаешь на неё.",
+  "Отдых — это не слабость. Это инвестиция в следующий рывок.",
+  "Твоя интуиция знает ответ. Твой страх — заглушает его.",
+  "Ты не строишь жизнь. Ты строишь себя — и жизнь следует.",
+  "Самое смелое что ты можешь сделать сегодня — остаться верным себе.",
+  "Тревога говорит «что если». Действие говорит «посмотрим».",
+  "Каждое утро — это точка перезагрузки. Вчера не важно.",
+  "Вселенная любит смелых. Не потому что они не боятся — а потому что идут несмотря.",
+  "Твоя цель уже существует. Тебе просто нужно стать тем, кто её достоин.",
+  "Не жди идеального момента. Создай его своим действием.",
+  "Ты — накопленный опыт миллионов людей до тебя. Ты не одинок никогда.",
+  "Твоё тело знает больше, чем твой ум думает. Прислушайся.",
+  "Покой — не значит ничего не делать. Покой — делать с принятием.",
+  "За каждым великим результатом — сотни невидимых дней. Ты строишь один из них.",
+  "Твои мысли сегодня — это твоя жизнь завтра. Выбирай их осознанно.",
+  "Вселенная не судит твои ошибки. Она использует их как уроки.",
+  "Там где страшнее всего — там и рост.",
+  "Ты уже дальше, чем думаешь. Оглянись.",
+  "Энергия следует за вниманием. Куда смотришь — там и растёшь.",
+  "Сравнивай себя только с собой вчерашним.",
+  "Твоё «нет» чужому — это «да» себе.",
+  "Кризис — это не конец. Это трансформация.",
+  "Всё временно — и трудности, и радости. Поэтому не цепляйся ни за что.",
+  "Ты создан для чего-то большего, чем то, что видишь прямо сейчас.",
+  "Самые сильные деревья выросли в самых суровых условиях.",
+  "Ты не должен знать как. Ты должен знать зачем.",
+  "Прощение себя — это не слабость. Это освобождение для движения вперёд.",
+  "Твои сомнения — это просто непривычка к успеху. Привыкни.",
+  "Мир нуждается в твоей лучшей версии. Не в идеальной — в лучшей.",
+  "Доверяй процессу. Даже когда результата не видно.",
+  "Ты не просишь слишком много. Ты просто ещё не знаешь сколько можешь дать.",
+  "Каждый вдох — это выбор жить. Сделай его осознанно.",
+  "Твоя тревога о будущем — это воображение без направления. Дай ему цель.",
+  "Сила не в том чтобы не падать. Сила — в том как ты встаёшь.",
+  "Вселенная не торопится — и всё успевает. Ты тоже успеешь.",
+  "Самое важное что ты можешь сделать сегодня — быть честным с собой.",
+];
+
+// ── PRAISE MESSAGES (когда выполнил 80%+) ──
+const PRAISE_MSGS = [
+  { icon: "🐯", text: "ТЫ ТИГР. Серьёзно, откуда у тебя такая энергия?" },
+  { icon: "🚀", text: "Стив Джобс нервно курит в сторонке. Ты сегодня уровень." },
+  { icon: "💎", text: "Бриллиант не бывает без огранки. Сегодня — огранка пройдена." },
+  { icon: "🔥", text: "Ты что-то принял или это просто ты в своей стихии?" },
+  { icon: "👑", text: "Ты красотка. Серьёзно. И дело не во внешности — дело в характере." },
+  { icon: "⚡", text: "Молния ударяет туда, где самая высокая точка. Сегодня ты — та самая точка." },
+  { icon: "🦁", text: "Лев не объясняет себя овцам. Ты просто делаешь — и это видно." },
+  { icon: "🌊", text: "Ты не плывёшь по течению. Ты САМ и есть течение." },
+  { icon: "💫", text: "Вселенная сегодня смотрела на тебя и кивала. Продолжай." },
+  { icon: "🏆", text: "День закрыт. Версия тебя завтра будет чуть лучше. Так и работает магия." },
+  { icon: "🎯", text: "Снайпер дня. Каждая задача — в десятку." },
+  { icon: "🧬", text: "Твои гены сегодня гордятся тем, что они твои." },
+  { icon: "⚔️", text: "Большинство сдалось. Ты — нет. Вот в чём и есть вся разница." },
+  { icon: "🌟", text: "Такой день нельзя не отметить. Ты сегодня был версией себя через 5 лет." },
+  { icon: "🐆", text: "Не гепард, не тигр — ты что-то своё. Быстрее, точнее, целеустремлённее." },
+  { icon: "🎸", text: "Если бы жизнь была рок-концертом — сегодня ты сыграл соло." },
+  { icon: "🏄", text: "Ловишь волну. И выглядит это красиво." },
+  { icon: "🔑", text: "Ключ к успеху — это повторение. Ты только что нажал на него ещё раз." },
+  { icon: "🌅", text: "Кто-то сегодня жалел себя. Ты — нет. Разница будет видна через год." },
+  { icon: "💪", text: "Ты не ищешь мотивацию. Ты сам — её источник." },
+];
+
+// ── COACH NUDGE MESSAGES (если давно не заходил) ──
+const COACH_NUDGES = [
+  { title: "Коуч ждёт тебя", body: "Напиши мне — поможем стартануть. Один маленький шаг сейчас." },
+  { title: "Я заметил тебя нет", body: "Всё ок? Иногда стоп — это тоже часть пути. Напиши, поговорим." },
+  { title: "Серия под угрозой 👀", body: "Твоя серия ждёт. Заходи — хватит 5 минут чтобы отметить день." },
+  { title: "Ты не один в этом", body: "Иногда нужен только кто-то кто скажет: иди. Иди. Открой трекер." },
+  { title: "Вселенная ждёт действия", body: "Энергия накоплена — нужно только выпустить её. Одна задача. Просто одна." },
+];
+
+// ── MORNING MESSAGES ──
+const MORNING_MSGS = [
+  { icon: "☀️", title: "Доброе утро, воин", body: "Сегодня — новая страница. Что запишешь на ней?" },
+  { icon: "🌄", title: "День начинается", body: "У тебя есть задачи. У тебя есть цель. У тебя есть сейчас." },
+  { icon: "⚡", title: "Время действовать", body: "Пока другие снова ставят будильник — ты уже здесь. Это и есть преимущество." },
+  { icon: "🎯", title: "Фокус на день", body: "Одно действие. Самое важное. Сделай его первым." },
+  { icon: "🚀", title: "Запускаем день", body: "Твои задачи ждут. Начни — и энергия придёт в процессе." },
+];
+
+// ── EVENING MESSAGES ──
+const EVENING_MSGS = [
+  { icon: "🌙", title: "Как прошёл день?", body: "Отметь энергию дня — это займёт 10 секунд и поможет видеть паттерны." },
+  { icon: "📊", title: "Время рефлексии", body: "Что сработало сегодня? Что нет? Маленький анализ сейчас — большая ясность завтра." },
+  { icon: "🌟", title: "Подведи итог", body: "Запиши свои задачи дня. Каждая отметка — это +XP к твоему росту." },
+];
+
+// ── QUICK COACH PROMPTS ──
+const QUICK_PROMPTS = [
+  "Почему я откладываю дела?",
+  "Как поднять энергию прямо сейчас?",
+  "Что мне нужно изменить?",
+  "Я не вижу прогресса — что делать?",
+  "Как бороться с тревогой?",
+  "Мотивируй меня",
+  "Анализ моей недели",
+  "Помоги расставить приоритеты",
+];
+
+// ── COACH CHAT STATE ──
+let coachMessages = [];
+
+function initCoachScreen() {
+  document.getElementById('coach-badge').style.display = 'none';
+  renderCoachMessages();
+  renderQuickPrompts();
+  // Show universe card if empty chat
+  if (coachMessages.length === 0) {
+    showUniverseMessage();
+  }
+}
+
+function renderQuickPrompts() {
+  const wrap = document.getElementById('coach-quick-btns');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  QUICK_PROMPTS.forEach(p => {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'background:var(--bg3);border:1px solid var(--bg4);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;transition:.15s';
+    btn.textContent = p;
+    btn.onclick = () => {
+      document.getElementById('coach-inp').value = p;
+      sendCoachMessage();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderCoachMessages() {
+  const wrap = document.getElementById('coach-messages');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  if (coachMessages.length === 0) {
+    const name = state && state.name ? state.name.split(' ')[0] : 'друг';
+    const tasks = state ? getActiveTasks() : [];
+    const today = todayStr();
+    const checked = state ? (state.checked[today] || {}) : {};
+    const done = tasks.filter(t => checked[t.id]).length;
+    const lastDays = state ? Object.keys(state.checked || {}).sort().slice(-3) : [];
+
+    // Check if inactive
+    const daysSinceActive = lastDays.length > 0
+      ? Math.floor((new Date(today) - new Date(lastDays[lastDays.length - 1])) / 86400000)
+      : 99;
+
+    let intro;
+    if (daysSinceActive >= 3) {
+      intro = `${name}, я заметил тебя не было ${daysSinceActive} дней. Всё нормально? Расскажи что происходит — без осуждения, просто поговорим. Иногда пауза — это тоже часть пути, но важно не потерять направление.`;
+    } else if (done === 0) {
+      intro = `Привет, ${name}! Сегодня задачи ещё не отмечены. Что мешает? Напиши — разберёмся вместе. Иногда один разговор даёт больше, чем час в одиночестве с собой.`;
+    } else {
+      intro = `${name}, я вижу твой прогресс — ${done} из ${tasks.length} задач сегодня. Я здесь чтобы помочь тебе думать лучше, действовать точнее и расти быстрее. О чём поговорим?`;
+    }
+
+    addCoachMsg('coach', intro);
+    return;
+  }
+
+  coachMessages.forEach(m => {
+    const isUser = m.role === 'user';
+    const div = document.createElement('div');
+    div.style.cssText = `display:flex;${isUser ? 'justify-content:flex-end' : 'justify-content:flex-start'};margin-bottom:2px`;
+    const bubble = document.createElement('div');
+    bubble.style.cssText = `max-width:85%;padding:11px 14px;border-radius:${isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};font-size:14px;line-height:1.55;font-weight:${isUser ? '600' : '500'};${isUser ? 'background:var(--accent);color:#fff' : 'background:var(--bg3);border:1px solid var(--bg4);color:var(--text)'}`;
+    bubble.textContent = m.content;
+    div.appendChild(bubble);
+    wrap.appendChild(div);
+  });
+
+  // Scroll to bottom
+  setTimeout(() => { wrap.scrollTop = wrap.scrollHeight; }, 50);
+}
+
+function addCoachMsg(role, content) {
+  coachMessages.push({ role, content });
+  renderCoachMessages();
+}
+
+async function sendCoachMessage() {
+  const inp = document.getElementById('coach-inp');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  inp.style.height = '46px';
+
+  if (coachMessages.length === 0) coachMessages = [];
+  addCoachMsg('user', text);
+
+  // Typing indicator
+  const wrap = document.getElementById('coach-messages');
+  const typing = document.createElement('div');
+  typing.id = 'typing-indicator';
+  typing.style.cssText = 'display:flex;justify-content:flex-start;margin-bottom:2px';
+  typing.innerHTML = '<div style="background:var(--bg3);border:1px solid var(--bg4);border-radius:16px 16px 16px 4px;padding:11px 16px;font-size:18px;color:var(--text2)">●●●</div>';
+  wrap.appendChild(typing);
+  wrap.scrollTop = wrap.scrollHeight;
+
+  // Build context
+  const tasks = getActiveTasks();
+  const today = todayStr();
+  const checked = state.checked[today] || {};
+  const done = tasks.filter(t => checked[t.id]).length;
+  const mult = (() => {
+    let m = 1;
+    Object.keys(state.checked || {}).forEach(ds => {
+      const c = state.checked[ds] || {};
+      const d = tasks.filter(t => c[t.id]).length;
+      const r = d / (tasks.length || 1);
+      if (r > 0) m *= (1 + 0.01 * r);
+    });
+    return m.toFixed(2);
+  })();
+  const streakInfo = state.streak || 0;
+  const destructCount = Object.values(state.destructDone || {}).reduce((s, d) => s + Object.keys(d).length, 0);
+
+  const systemPrompt = `Ты личный ИИ-коуч и ментор в приложении Growth Tracker. Твой стиль: прямой, честный, тёплый, без лишних слов. Говоришь как умный старший друг — не психолог и не бот.
+
+ДАННЫЕ О ПОЛЬЗОВАТЕЛЕ:
+- Имя: ${state.name}
+- Главная цель: ${state.mainGoal}
+- Занятие: ${state.occupation || 'не указано'}
+- Сферы: ${(state.spheres || []).join(', ')}
+- Серия: ${streakInfo} дней
+- Множитель роста: ×${mult}
+- Задач сегодня: ${done}/${tasks.length}
+- Деструкторов всего: ${destructCount}
+
+ПРАВИЛА:
+- Отвечай коротко: 2-4 предложения. Иногда одно — если оно точное.
+- Не перечисляй списки без нужды. Говори живо.
+- Если человек жалуется — сначала прими, потом направь.
+- Знаешь его данные — используй их конкретно.
+- Не говори "я понимаю твои чувства" — это шаблонно. Будь конкретнее.
+- Можешь задать один встречный вопрос если нужно уточнение.`;
+
+  const messages = coachMessages.slice(-10).map(m => ({ role: m.role === 'coach' ? 'assistant' : 'user', content: m.content }));
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, system: systemPrompt, messages })
+    });
+    const data = await res.json();
+    const reply = data.content.map(i => i.text || '').join('');
+    const typingEl = document.getElementById('typing-indicator');
+    if (typingEl) typingEl.remove();
+    addCoachMsg('coach', reply);
+  } catch (e) {
+    const typingEl = document.getElementById('typing-indicator');
+    if (typingEl) typingEl.remove();
+    addCoachMsg('coach', 'Связь прервалась. Но ты уже знаешь ответ — просто действуй.');
+  }
+}
+
+function clearCoachChat() {
+  coachMessages = [];
+  renderCoachMessages();
+  document.getElementById('universe-card').style.display = 'none';
+}
+
+function autoResize(el) {
+  el.style.height = '46px';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ── UNIVERSE MESSAGE ──
+function showUniverseMessage(autoShow = false) {
+  const msg = UNIVERSE_MSGS[Math.floor(Math.random() * UNIVERSE_MSGS.length)];
+  const card = document.getElementById('universe-card');
+  const textEl = document.getElementById('universe-text');
+  const timeEl = document.getElementById('universe-time');
+  if (!card) return;
+  textEl.textContent = '«' + msg + '»';
+  timeEl.textContent = new Date().toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+  card.style.display = 'block';
+  if (!autoShow) {
+    card.style.animation = 'none';
+    card.offsetHeight; // reflow
+  }
+}
+
+// ── IN-APP NOTIFICATION BANNER ──
+let bannerTimer = null;
+function showBanner(icon, title, body, duration = 4000) {
+  document.getElementById('notif-icon').textContent = icon;
+  document.getElementById('notif-title').textContent = title;
+  document.getElementById('notif-body').textContent = body;
+  const banner = document.getElementById('notif-banner');
+  banner.style.display = 'block';
+  banner.style.animation = 'slideDown .35s cubic-bezier(.4,0,.2,1)';
+  if (bannerTimer) clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(dismissBanner, duration);
+}
+function dismissBanner() {
+  document.getElementById('notif-banner').style.display = 'none';
+}
+
+// ── PRAISE on day complete ──
+function showPraise() {
+  const p = PRAISE_MSGS[Math.floor(Math.random() * PRAISE_MSGS.length)];
+  showBanner(p.icon, 'ДЕНЬ ЗАКРЫТ!', p.text, 5000);
+  // Also show coach badge
+  const badge = document.getElementById('coach-badge');
+  if (badge) badge.style.display = 'block';
+  // Add auto coach message
+  coachMessages = [];
+  coachMessages.push({ role: 'coach', content: p.icon + ' ' + p.text + '\n\nСерьёзно — так выглядит дисциплина в действии. Что дало тебе сегодня энергию? Напиши — зафиксируем паттерн.' });
+}
+
+// ── SCHEDULE IN-APP NOTIFICATIONS ──
+function scheduleNotifications() {
+  if (!state) return;
+  const now = new Date();
+  const h = now.getHours();
+  const today = todayStr();
+  const lastShown = state.lastNotifDate || '';
+
+  // Morning (7-10): show once per day
+  if (h >= 7 && h < 10 && lastShown !== today) {
+    const tasks = getActiveTasks();
+    const msg = MORNING_MSGS[Math.floor(Math.random() * MORNING_MSGS.length)];
+    setTimeout(() => showBanner(msg.icon, msg.title, msg.body + ' У тебя ' + tasks.length + ' задач сегодня.', 5000), 1500);
+    state.lastNotifDate = today;
+    saveState();
+  }
+
+  // Evening (20-22): if energy not set
+  if (h >= 20 && h < 22) {
+    const energySet = state.energy && state.energy[today];
+    if (!energySet) {
+      const msg = EVENING_MSGS[Math.floor(Math.random() * EVENING_MSGS.length)];
+      setTimeout(() => showBanner(msg.icon, msg.title, msg.body, 5000), 2000);
+    }
+  }
+
+  // Check inactivity
+  const allDays = Object.keys(state.checked || {}).sort();
+  if (allDays.length > 0) {
+    const lastActive = allDays[allDays.length - 1];
+    const daysSince = Math.floor((new Date(today) - new Date(lastActive)) / 86400000);
+    if (daysSince >= 2 && lastShown !== today) {
+      const nudge = COACH_NUDGES[Math.floor(Math.random() * COACH_NUDGES.length)];
+      setTimeout(() => {
+        showBanner('🤖', nudge.title, nudge.body, 6000);
+        const badge = document.getElementById('coach-badge');
+        if (badge) badge.style.display = 'block';
+        // Pre-load coach message
+        coachMessages = [{ role: 'coach', content: nudge.body + '\n\nНапиши мне — без осуждения, просто поговорим. Что происходит?' }];
+      }, 3000);
+    }
+  }
+
+  // Daily universe message (random time during day)
+  if (h >= 10 && h < 20) {
+    const lastUniverse = state.lastUniverseDate || '';
+    if (lastUniverse !== today) {
+      const delay = Math.random() * 3000 + 2000;
+      setTimeout(() => {
+        const msg = UNIVERSE_MSGS[Math.floor(Math.random() * UNIVERSE_MSGS.length)];
+        showBanner('🌌', 'Вселенная говорит', '«' + msg + '»', 7000);
+      }, delay);
+      state.lastUniverseDate = today;
+      saveState();
+    }
+  }
+}
+
+// ── PWA PUSH NOTIFICATIONS ──
+async function requestPushPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+function sendPushNotif(title, body, icon = '⚡') {
+  if (Notification.permission !== 'granted') return;
+  try {
+    new Notification(title, {
+      body,
+      icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='114' fill='%237C6EFF'/%3E%3Ctext x='50%25' y='54%25' font-size='280' text-anchor='middle' dominant-baseline='middle' fill='white'%3E" + encodeURIComponent(icon) + "%3C/text%3E%3C/svg%3E",
+      badge: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='114' fill='%237C6EFF'/%3E%3C/svg%3E",
+      tag: 'growth-tracker',
+      renotify: true,
+    });
+  } catch (e) {}
+}
+
+function schedulePushNotifications() {
+  if (!state) return;
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+
+  // Schedule morning push at 8:00
+  const msTo8 = (() => {
+    const target = new Date(); target.setHours(8, 0, 0, 0);
+    if (target <= now) target.setDate(target.getDate() + 1);
+    return target - now;
+  })();
+  setTimeout(() => {
+    const msg = MORNING_MSGS[Math.floor(Math.random() * MORNING_MSGS.length)];
+    sendPushNotif(msg.title, msg.body);
+  }, msTo8);
+
+  // Schedule evening push at 21:00
+  const msTo21 = (() => {
+    const target = new Date(); target.setHours(21, 0, 0, 0);
+    if (target <= now) target.setDate(target.getDate() + 1);
+    return target - now;
+  })();
+  setTimeout(() => {
+    const msg = EVENING_MSGS[Math.floor(Math.random() * EVENING_MSGS.length)];
+    sendPushNotif(msg.title, msg.body);
+  }, msTo21);
+
+  // Universe push at random afternoon time
+  const msToUniverse = (() => {
+    const rndH = 12 + Math.floor(Math.random() * 6); // 12-17
+    const target = new Date(); target.setHours(rndH, Math.floor(Math.random() * 60), 0, 0);
+    if (target <= now) target.setDate(target.getDate() + 1);
+    return target - now;
+  })();
+  setTimeout(() => {
+    const msg = UNIVERSE_MSGS[Math.floor(Math.random() * UNIVERSE_MSGS.length)];
+    sendPushNotif('🌌 Вселенная говорит', '«' + msg + '»');
+  }, msToUniverse);
+}
+
+// ── HOOK INTO checkDayComplete for praise ──
+const _origCheckDay = window.checkDayComplete;
+// Override after state is loaded (done below in initAppV4)
+
+// ── INIT PUSH PERMISSION CARD in settings ──
+function renderPushCard() {
+  const card = document.getElementById('push-permission-card');
+  if (!card) return;
+  if (!('Notification' in window)) { card.style.display = 'none'; return; }
+  if (Notification.permission === 'granted') {
+    card.innerHTML = '<div style="font-size:13px;color:var(--green);font-weight:700">✓ Push-уведомления включены — ты будешь получать сообщения от вселенной и коуча</div>';
+  } else {
+    card.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:8px">🔔 Включить уведомления?</div><div style="font-size:13px;color:var(--text2);margin-bottom:12px">Утренний заряд, вечерняя рефлексия и сообщения от вселенной прямо в телефон</div><button class="btn btn-accent btn-full btn-sm" onclick="enablePush()">Включить уведомления</button>';
+  }
+}
+
+async function enablePush() {
+  const granted = await requestPushPermission();
+  if (granted) {
+    schedulePushNotifications();
+    renderPushCard();
+    showToast('Уведомления включены ✓', 'pos');
+  } else {
+    showToast('Разреши уведомления в настройках браузера', 'neg');
+  }
+}
+
+function initAppV4() {
+  // Override checkDayComplete to add praise
+  const origCheck = checkDayComplete;
+  window.checkDayComplete = function(today) {
+    const wasInHistory = state.history.includes(today);
+    origCheck(today);
+    const nowInHistory = state.history.includes(today);
+    if (!wasInHistory && nowInHistory) {
+      setTimeout(showPraise, 600);
+    }
+  };
+
+  scheduleNotifications();
+  if (Notification.permission === 'granted') schedulePushNotifications();
+  renderPushCard();
+}
+
+// ── ADD slideDown animation ──
+const styleEl = document.createElement('style');
+styleEl.textContent = `
+@keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.coach-inp-focused{border-color:var(--accent)!important}
+#coach-messages{padding-bottom:8px}
+`;
+document.head.appendChild(styleEl);
+
+// ── PATCH initApp to call v4 additions ──
+const _origInitApp = window.initApp;
+window.initApp = function() {
+  _origInitApp();
+  initAppV4();
+};
+
+// ── ADD push card to settings ──
+document.addEventListener('DOMContentLoaded', () => {});
+// We patch after DOM ready — inject into settings screen
+setTimeout(() => {
+  const settingsScreen = document.getElementById('screen-settings');
+  if (settingsScreen) {
+    const pushCard = document.createElement('div');
+    pushCard.id = 'push-permission-card';
+    pushCard.className = 'card';
+    pushCard.style.cssText = 'margin-top:0';
+    // Insert before last card
+    const cards = settingsScreen.querySelectorAll('.card');
+    if (cards.length > 0) {
+      const firstCard = cards[0];
+      settingsScreen.insertBefore(pushCard, firstCard);
+      // Add sec label before it
+      const secLabel = document.createElement('div');
+      secLabel.className = 'sec';
+      secLabel.textContent = 'Уведомления';
+      settingsScreen.insertBefore(secLabel, pushCard);
+    }
+    renderPushCard();
+  }
+}, 100);
+</script>
+
