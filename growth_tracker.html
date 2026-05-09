@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Growth">
+<meta name="theme-color" content="#534AB7">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAABiUlEQVR42u3TMQ0AAAjAMPTxIhZ5YIKPHjWwZFHZA1+FCBgADAAGAAOAAcAAYAAwABgADAAGAAOAAcAAYAAwABgADAAGAAOAAcAAYAAwABgADAAGAAOAAcAAYAAwABgADAAGAAOAAcAAYAAwABgADAAGAAOAAcAAYAAwABgADAAGwAAiYAAwABgADAAGAAOAAcAAYAAwABgADAAGAAOAAcAAYAAwABgADAAGAAOAAcAAYAAwABgADAAGAAOAAcAAYAAwABgADAAGAAOAAcAAYAAwABgADAAGAAOAAcAAYAAwABgAA4ABwABgADAAGAAMAAYAA4ABwABgADAAGAAMAAYAA4ABwABgADAAGAAMAAYAA4ABwABgADAAGAAMAAYAA4ABwABgADAAGAAMAAYAA4ABwABgADAAGAAMAAYAA4ABwAAYQAQMAAYAA4ABwABgADAAGAAMAAYAA4ABwABgADAAGAAMAAYAA4ABwABgADAAGAAMAAYAA4ABwABgADAAGAAMAAYAA8ClBe6Uw5O+VxusAAAAAElFTkSuQmCC">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Growth Tracker — 365 дней</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;padding:16px;padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
+  .container{max-width:680px;margin:0 auto}
+  .card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:1rem 1.25rem;margin-bottom:10px}
+  .sec{font-size:11px;font-weight:500;color:#888;letter-spacing:.06em;text-transform:uppercase;margin:1.2rem 0 8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px}
+  .metric{background:#f5f4f0;border-radius:8px;padding:.7rem 1rem}
+  .mlabel{font-size:12px;color:#888;margin-bottom:3px}
+  .mval{font-size:20px;font-weight:500;color:#1a1a18}
+  .xpwrap{background:#f0efe8;border-radius:6px;height:8px;overflow:hidden;margin:5px 0 2px}
+  .xpbar{height:8px;border-radius:6px;background:#534AB7;transition:width .5s}
+  .task{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.08)}
+  .task:last-child{border-bottom:none;padding-bottom:0}
+  .cb{width:22px;height:22px;min-width:22px;border-radius:6px;border:1.5px solid #ccc;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:1px;flex-shrink:0}
+  .cb.done{background:#1D9E75;border-color:#1D9E75}
+  .cb.done::after{content:'';display:block;width:5px;height:9px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg) translate(-1px,-1px)}
+  .tinfo{flex:1}
+  .tname{font-size:14px;color:#1a1a18;line-height:1.4}
+  .tname.done{text-decoration:line-through;color:#aaa}
+  .tsub{font-size:12px;color:#888;margin-top:1px}
+  .xpbadge{font-size:11px;font-weight:500;color:#3C3489;background:#EEEDFE;padding:2px 7px;border-radius:10px;white-space:nowrap;align-self:flex-start;margin-top:2px;flex-shrink:0}
+  .sday{width:36px;height:46px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  .sday .dn{font-size:10px;font-weight:500}
+  .sday .dd{font-size:13px;font-weight:500}
+  .sday.done{background:#1D9E75;color:#E1F5EE}
+  .sday.today{background:#EEEDFE;color:#534AB7;border:1.5px solid #534AB7}
+  .sday.empty{background:#f0efe8;color:#aaa}
+  .goal-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid rgba(0,0,0,0.08)}
+  .goal-row:last-child{border-bottom:none}
+  .gwrap{width:80px;background:#f0efe8;border-radius:4px;height:6px;overflow:hidden;flex-shrink:0}
+  .gbar{height:6px;border-radius:4px;background:#534AB7}
+  .trigger-box{background:#EEEDFE;border:0.5px solid #AFA9EC;border-radius:10px;padding:.9rem 1.1rem;margin-bottom:10px}
+  .lvl-badge{display:inline-flex;align-items:center;gap:6px;background:#FAEEDA;border-radius:8px;padding:4px 12px;margin-bottom:10px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1D9E75;color:#fff;font-size:14px;font-weight:500;padding:10px 20px;border-radius:10px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.15)}
+  .toast.show{opacity:1}
+  .fin-input-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .fin-input-row input,.fin-input-row select{padding:7px 10px;font-size:13px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;outline:none}
+  .fin-input-row input:focus,.fin-input-row select:focus{border-color:#534AB7}
+  .fin-input-row button{padding:7px 14px;font-size:13px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;cursor:pointer;transition:background .15s}
+  .fin-input-row button:hover{background:#f0efe8}
+  .fin-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.08);font-size:13px}
+  .fin-row:last-child{border-bottom:none}
+  .fin-type{font-size:11px;font-weight:500;padding:2px 8px;border-radius:8px;white-space:nowrap}
+  .fi{background:#E1F5EE;color:#085041}
+  .fe{background:#FCEBEB;color:#791F1F}
+  .fs{background:#EEEDFE;color:#3C3489}
+  .sector-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .sector-card{background:#f5f4f0;border-radius:10px;padding:.8rem 1rem}
+  .sector-ring{width:100%;height:6px;background:#e0dfd8;border-radius:4px;overflow:hidden;margin-bottom:4px}
+  .sector-fill{height:6px;border-radius:4px;transition:width .5s}
+  .tag{font-size:12px;font-weight:500;padding:3px 10px;border-radius:8px;display:inline-block;margin-bottom:10px}
+  .tag-teal{background:#E1F5EE;color:#085041}
+  .tag-amber{background:#FAEEDA;color:#633806}
+  .tag-purple{background:#EEEDFE;color:#3C3489}
+  .tag-blue{background:#E6F1FB;color:#0C447C}
+  .action-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;margin-bottom:16px}
+  .action-btn{padding:8px 14px;font-size:13px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;cursor:pointer;transition:background .15s}
+  .action-btn:hover{background:#f0efe8}
+  h1{font-size:20px;font-weight:500;color:#1a1a18;margin-bottom:4px}
+  .subtitle{font-size:13px;color:#888;margin-bottom:16px}
+
+  .growth-hero{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:16px;padding:1.25rem;margin-bottom:10px;text-align:center}
+  .growth-big{font-size:52px;font-weight:700;line-height:1;transition:all .4s}
+  .growth-mini{background:#f5f4f0;border-radius:10px;padding:.6rem 1rem;min-width:90px;text-align:center}
+  .balance-hero{background:linear-gradient(135deg,#534AB7,#1D9E75);border-radius:12px;padding:1.25rem;margin-bottom:10px;color:#fff;text-align:center}
+  .balance-amount{font-size:40px;font-weight:700;line-height:1;margin:4px 0 2px}
+  .cat-badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:8px;white-space:nowrap;display:inline-block}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;padding:16px}
+  .modal-overlay.open{display:flex}
+  .modal{background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+  .modal h3{font-size:16px;font-weight:500;margin-bottom:16px}
+  canvas{max-width:100%}
+  @media(prefers-color-scheme:dark){
+    body{background:#1a1a18;color:#f0efe8}
+    .card{background:#2a2a28;border-color:rgba(255,255,255,0.1)}
+    .metric,.sday.empty{background:#222220}
+    .xpwrap,.gwrap,.sector-ring{background:#333}
+    .fin-input-row input,.fin-input-row input:focus,.fin-input-row select,.fin-input-row button,.action-btn{background:#2a2a28;color:#f0efe8;border-color:rgba(255,255,255,0.15)}
+    .fin-input-row button:hover,.action-btn:hover{background:#333}
+    .tname{color:#f0efe8}
+    .mval{color:#f0efe8}
+    h1{color:#f0efe8}
+    .sector-card{background:#222220}
+    .lvl-badge{background:#3a2e1a}
+    .trigger-box{background:#2a2640;border-color:#534AB7}
+    .sday.empty{color:#666}
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<meta name="theme-color" content="#534AB7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Growth">
+<link rel="manifest" id="pwa-manifest">
+<script>
+// Inline manifest injection (no server needed)
+const manifest = {
+  name: "Growth Tracker — 365 дней",
+  short_name: "Growth",
+  start_url: "./",
+  display: "standalone",
+  background_color: "#f5f4f0",
+  theme_color: "#534AB7",
+  icons: [{
+    src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='114' fill='%23534AB7'/%3E%3Ctext x='50%25' y='54%25' font-size='280' text-anchor='middle' dominant-baseline='middle' fill='white'%3E%E2%AD%90%3C/text%3E%3C/svg%3E",
+    sizes: "512x512", type: "image/svg+xml"
+  }]
+};
+const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+if('serviceWorker' in navigator){
+  // simple offline cache
+  const swCode = `
+self.addEventListener('install', e => e.waitUntil(
+  caches.open('gt-v1').then(c => c.addAll(['./', location.href]))
+));
+self.addEventListener('fetch', e => e.respondWith(
+  caches.match(e.request).then(r => r || fetch(e.request))
+));`;
+  const swBlob = new Blob([swCode], {type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+}
+</script>
+</head>
+<body>
+<div class="container">
+  <div id="toast" class="toast"></div>
+
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;margin-top:8px">
+    <div>
+      <h1>Growth Tracker</h1>
+      <div class="subtitle">365 дней к цели — Forbes 30 до 30</div>
+    </div>
+    <div style="text-align:right">
+      <div class="lvl-badge"><span style="font-size:15px">★</span><span style="font-size:13px;font-weight:500;color:#633806" id="lvl-name">Новичок</span></div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+      <span style="font-size:12px;color:#888">Уровень <span id="lvl-num">1</span></span>
+      <span style="font-size:12px;color:#888"><span id="xp-cur">0</span> / <span id="xp-next">100</span> XP</span>
+    </div>
+    <div class="xpwrap"><div class="xpbar" id="xp-bar" style="width:0%"></div></div>
+  </div>
+
+  <div class="grid">
+    <div class="metric"><div class="mlabel">Серия</div><div class="mval" style="color:#534AB7" id="streak-val">0 🔥</div></div>
+    <div class="metric"><div class="mlabel">XP всего</div><div class="mval" id="total-xp">0</div></div>
+    <div class="metric"><div class="mlabel">Сегодня</div><div class="mval" style="color:#1D9E75" id="done-today">0/0</div></div>
+    <div class="metric"><div class="mlabel">День из 365</div><div class="mval" style="color:#BA7517" id="day-num">1</div></div>
+  </div>
+
+  <div class="sec">Общий рост — в реальном времени</div>
+  <div class="growth-hero">
+    <div style="font-size:12px;color:#888;margin-bottom:6px">Ты стал лучше на</div>
+    <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;margin-bottom:4px">
+      <div class="growth-big" id="growth-big" style="color:#1D9E75">+0%</div>
+    </div>
+    <div id="growth-desc" style="font-size:13px;color:#888;margin-bottom:14px">за всё время ведения трекера</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px">
+      <div class="growth-mini">
+        <div style="font-size:11px;color:#888;margin-bottom:3px">Сегодня</div>
+        <div id="growth-today" style="font-size:18px;font-weight:500;color:#534AB7">+0%</div>
+      </div>
+      <div class="growth-mini">
+        <div style="font-size:11px;color:#888;margin-bottom:3px">За 7 дней</div>
+        <div id="growth-week" style="font-size:18px;font-weight:500;color:#534AB7">+0%</div>
+      </div>
+      <div class="growth-mini">
+        <div style="font-size:11px;color:#888;margin-bottom:3px">Множитель</div>
+        <div id="growth-mult" style="font-size:18px;font-weight:500;color:#BA7517">×1.00</div>
+      </div>
+    </div>
+    <div style="margin-bottom:4px;display:flex;justify-content:space-between;font-size:12px;color:#888">
+      <span>Прогресс к ×37.8 (год идеальных дней)</span>
+      <span id="growth-year-pct">0%</span>
+    </div>
+    <div style="background:#f0efe8;border-radius:6px;height:8px;overflow:hidden">
+      <div id="growth-year-bar" style="height:8px;border-radius:6px;background:linear-gradient(90deg,#534AB7,#1D9E75);transition:width .5s;width:0%"></div>
+    </div>
+  </div>
+
+  <div class="sec">Фокус недели</div>
+  <div style="background:#1a1a18;border-radius:12px;padding:1rem 1.25rem;margin-bottom:10px;display:flex;align-items:center;gap:12px">
+    <span style="font-size:24px">🎯</span>
+    <div style="flex:1">
+      <div id="weekly-focus-text" style="font-size:14px;font-weight:500;color:#fff;line-height:1.4">Запусти первый ролик Монаха на английском</div>
+      <div style="font-size:12px;color:#888;margin-top:2px">Обновляется каждую неделю после рефлексии</div>
+    </div>
+    <button onclick="openReflection()" style="flex-shrink:0;padding:7px 14px;background:#534AB7;border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500">Рефлексия →</button>
+  </div>
+
+  <div class="sec">Серия — текущая неделя (Пн–Вс)</div>
+  <div class="card">
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="streak-row"></div>
+    <div style="font-size:12px;color:#888;margin-top:8px">День засчитывается при выполнении 80%+ задач</div>
+  </div>
+
+  <div class="sec">Прогресс по секторам</div>
+  <div class="sector-grid" id="sectors"></div>
+
+  <div class="sec">Финансы</div>
+  <div class="balance-hero">
+    <div style="font-size:13px;opacity:.8;margin-bottom:2px">Текущий баланс</div>
+    <div class="balance-amount" id="fin-balance">$0</div>
+    <div style="font-size:12px;opacity:.7;margin-top:4px">Обновляется автоматически при записи операций</div>
+  </div>
+  <div class="card">
+    <div class="grid" style="margin-bottom:12px">
+      <div class="metric"><div class="mlabel">Приход (месяц)</div><div class="mval" style="color:#1D9E75" id="fin-income">$0</div></div>
+      <div class="metric"><div class="mlabel">Расход (месяц)</div><div class="mval" style="color:#E24B4A" id="fin-expense">$0</div></div>
+      <div class="metric"><div class="mlabel">Накопления</div><div class="mval" style="color:#534AB7" id="fin-save">$0</div></div>
+      <div class="metric"><div class="mlabel">Норма 10%</div><div class="mval" id="fin-save-pct">0%</div></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:4px">
+        <span>Накопления от прихода</span><span id="fin-save-target">цель: $0</span>
+      </div>
+      <div class="xpwrap"><div class="xpbar" id="fin-save-bar" style="width:0%;background:#534AB7"></div></div>
+    </div>
+    <div class="fin-input-row">
+      <select id="fin-type" style="width:110px">
+        <option value="income">Приход</option>
+        <option value="expense">Расход</option>
+        <option value="save">Накопление</option>
+      </select>
+      <input type="number" id="fin-amount" placeholder="Сумма $" style="width:110px" min="0">
+      <input type="text" id="fin-desc" placeholder="Описание" style="flex:1;min-width:80px">
+      <button onclick="addFinance()">+ Добавить</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <button class="action-btn" style="font-size:12px;padding:5px 12px" onclick="openSetBalance()">✎ Задать баланс</button>
+      <button class="action-btn" style="font-size:12px;padding:5px 12px" onclick="openMonthReport()">📊 Месячный отчёт</button>
+    </div>
+    <div id="fin-log" style="margin-top:10px"></div>
+  </div>
+
+  <div class="trigger-box">
+    <div style="font-size:13px;font-weight:500;color:#3C3489;margin-bottom:4px">Триггер переключения на Монаха</div>
+    <div style="font-size:12px;color:#534AB7">Доход с Монаха: <span id="monk-income" style="font-weight:500">$0</span> / $1 000 — при достижении переводим команду</div>
+    <div class="xpwrap" style="margin-top:6px"><div class="xpbar" id="monk-bar" style="width:0%;background:#BA7517"></div></div>
+    <div class="fin-input-row" style="margin-top:8px">
+      <input type="number" id="monk-input" placeholder="Доход с Монаха $" style="flex:1" min="0">
+      <button onclick="addMonkIncome()">+ Добавить</button>
+    </div>
+  </div>
+
+  <div class="sec">Задачи сегодня</div>
+  <div class="card"><div class="tag tag-teal">Бизнес — агентство</div><div id="tasks-biz"></div></div>
+  <div class="card"><div class="tag tag-amber">Монах (США)</div><div id="tasks-monk"></div></div>
+  <div class="card"><div class="tag tag-purple">Тело и здоровье</div><div id="tasks-body"></div></div>
+  <div class="card"><div class="tag tag-blue">Ум и развитие</div><div id="tasks-mind"></div></div>
+
+  <div class="sec">Цели</div>
+  <div class="card" id="goals-block"></div>
+
+  <div class="action-btns">
+    <button class="action-btn" onclick="openModal('modal-reflect')" style="background:#534AB7;color:#fff;border-color:#534AB7">🧠 Еженедельная рефлексия</button>
+    <button class="action-btn" onclick="exportData()">Экспорт данных</button>
+    <button class="action-btn" onclick="importData()">Импорт данных</button>
+    <button class="action-btn" onclick="resetConfirm()">Сбросить</button>
+  </div>
+
+  <div id="last-reflection-info" style="font-size:12px;color:#888;margin-bottom:8px;text-align:center">Рефлексия: не проводилась</div>
+  <div style="text-align:center;font-size:12px;color:#aaa;margin-bottom:24px">
+    Данные сохраняются локально на этом устройстве.<br>
+    Используй Экспорт/Импорт для переноса на другое устройство.
+  </div>
+</div>
+
+<script>
+const TASKS={
+  biz:[
+    {id:'b1',text:'Главная задача по агентству — одно действие для роста дохода',sub:'Новый лид, звонок, оффер клиенту',xp:20,sector:'biz'},
+    {id:'b2',text:'70 откликов или 3 партнёрских касания',sub:'Главный канал привлечения клиентов',xp:15,sector:'biz'},
+    {id:'b3',text:'Ответить клиентам до 12:00',sub:'LTV держится на сервисе',xp:5,sector:'biz'},
+  ],
+  monk:[
+    {id:'m1',text:'Снять и выложить 1 ролик Монаха на английском',sub:'HeyGen + тема здоровье / народная медицина',xp:25,sector:'monk'},
+    {id:'m2',text:'Проверить аналитику: просмотры, переходы, продажи',sub:'Фиксируй воронку каждый день',xp:10,sector:'monk'},
+    {id:'m3',text:'Изучить 1 успешный англоязычный аккаунт',sub:'Хук, тема, CTA — что зашло',xp:10,sector:'monk'},
+  ],
+  body:[
+    {id:'bo1',text:'Тренировка — минимум 30 минут',sub:'Серия идёт — не прерывай',xp:15,sector:'body'},
+    {id:'bo2',text:'Контрастный душ или ледяная ванна',sub:'Дофамин, энергия, кортизол',xp:10,sector:'body'},
+    {id:'bo3',text:'Только здоровая еда весь день',sub:'Белок, овощи, сложные углеводы',xp:10,sector:'body'},
+    {id:'bo4',text:'Сон 7–8 часов, лечь до 23:30',sub:'База восстановления',xp:10,sector:'body'},
+  ],
+  mind:[
+    {id:'mi1',text:'Английский — 20 минут (Duolingo / shadowing / подкаст)',sub:'Рынок США — язык критичен',xp:15,sector:'mind'},
+    {id:'mi2',text:'Читать книгу — 15–20 страниц',sub:'Речь, кругозор, идеи',xp:10,sector:'mind'},
+    {id:'mi3',text:'Изучить новое по маркетингу или контенту',sub:'Видео, статья, кейс — 15 мин',xp:10,sector:'mind'},
+    {id:'mi4',text:'Вечерняя рефлексия: что сделал, что нет, почему',sub:'3 минуты письменно',xp:5,sector:'mind'},
+  ]
+};
+
+const SECTOR_META={
+  biz:{name:'Бизнес',color:'#1D9E75'},
+  monk:{name:'Монах',color:'#BA7517'},
+  body:{name:'Тело',color:'#534AB7'},
+  mind:{name:'Ум',color:'#185FA5'},
+};
+
+const GOALS=[
+  {text:'BMW M850 / M8',target:60000,key:'bmw'},
+  {text:'Доход $5 000/мес',target:5000,key:'income5k'},
+  {text:'Монах $1 000/мес',target:1000,key:'monk'},
+  {text:'Forbes 30 до 30',target:100,key:'forbes'},
+];
+
+const LEVELS=[
+  {name:'Новичок',xp:0},{name:'Игрок',xp:100},{name:'Боец',xp:300},
+  {name:'Строитель',xp:600},{name:'Предприниматель',xp:1000},
+  {name:'Лидер',xp:1500},{name:'Визионер',xp:2200},{name:'Легенда',xp:3000}
+];
+
+const DAY_NAMES=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const KEY='growth_tracker_v1';
+
+function todayStr(){return new Date().toISOString().slice(0,10);}
+
+function loadState(){
+  try{const s=localStorage.getItem(KEY);if(s)return JSON.parse(s);}catch(e){}
+  return{xp:0,streak:0,startDate:todayStr(),history:[],monkIncome:0,goals:{bmw:0,income5k:0,monk:0,forbes:0},checked:{},finance:{income:0,expense:0,save:0,log:[]}};
+}
+
+function saveState(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+let state=loadState();
+
+function getLevel(xp){let l=0;for(let i=0;i<LEVELS.length;i++){if(xp>=LEVELS[i].xp)l=i;}return l;}
+
+function getMondayOfWeek(dateStr){
+  const d=new Date(dateStr);
+  const day=d.getDay();
+  const diff=day===0?-6:1-day;
+  d.setDate(d.getDate()+diff);
+  return d;
+}
+
+function renderXP(){
+  const lvl=getLevel(state.xp);
+  const cur=LEVELS[lvl].xp;
+  const next=lvl===LEVELS.length-1?LEVELS[lvl].xp+1:LEVELS[lvl+1].xp;
+  const pct=lvl===LEVELS.length-1?100:Math.round((state.xp-cur)/(next-cur)*100);
+  document.getElementById('lvl-name').textContent=LEVELS[lvl].name;
+  document.getElementById('lvl-num').textContent=lvl+1;
+  document.getElementById('xp-cur').textContent=state.xp;
+  document.getElementById('xp-next').textContent=next;
+  document.getElementById('xp-bar').style.width=pct+'%';
+  document.getElementById('total-xp').textContent=state.xp;
+}
+
+function renderStreak(){
+  document.getElementById('streak-val').textContent=state.streak+' 🔥';
+  const today=todayStr();
+  const monday=getMondayOfWeek(today);
+  const row=document.getElementById('streak-row');
+  row.innerHTML='';
+  for(let i=0;i<7;i++){
+    const d=new Date(monday);d.setDate(monday.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    const isDone=state.history.includes(ds);
+    const isToday=ds===today;
+    const isFuture=ds>today;
+    const div=document.createElement('div');
+    div.className='sday '+(isFuture?'empty':isToday?'today':isDone?'done':'empty');
+    div.innerHTML='<span class="dn">'+DAY_NAMES[i]+'</span><span class="dd">'+d.getDate()+'</span>';
+    row.appendChild(div);
+  }
+  const start=new Date(state.startDate);
+  const now=new Date(today);
+  const daysPassed=Math.max(1,Math.floor((now-start)/86400000)+1);
+  document.getElementById('day-num').textContent=Math.min(daysPassed,365);
+}
+
+function getSectorStats(){
+  const all=[...TASKS.biz,...TASKS.monk,...TASKS.body,...TASKS.mind];
+  const s={biz:{total:0,done:0,weekDays:0},monk:{total:0,done:0,weekDays:0},body:{total:0,done:0,weekDays:0},mind:{total:0,done:0,weekDays:0}};
+  all.forEach(t=>s[t.sector].total++);
+  const today=todayStr();
+  const checked=state.checked[today]||{};
+  all.forEach(t=>{if(checked[t.id])s[t.sector].done++;});
+  const monday=getMondayOfWeek(today);
+  for(let i=0;i<7;i++){
+    const d=new Date(monday);d.setDate(monday.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    if(ds>today)break;
+    const c=state.checked[ds]||{};
+    const sd={biz:false,monk:false,body:false,mind:false};
+    all.forEach(t=>{if(c[t.id])sd[t.sector]=true;});
+    Object.keys(sd).forEach(k=>{if(sd[k])s[k].weekDays++;});
+  }
+  return s;
+}
+
+function renderSectors(){
+  const stats=getSectorStats();
+  const wrap=document.getElementById('sectors');wrap.innerHTML='';
+  Object.keys(SECTOR_META).forEach(key=>{
+    const m=SECTOR_META[key];const st=stats[key];
+    const pct=st.total>0?Math.round(st.done/st.total*100):0;
+    const card=document.createElement('div');card.className='sector-card';
+    card.innerHTML='<div style="font-size:12px;color:#888;margin-bottom:6px">'+m.name+'</div>'
+      +'<div style="font-size:22px;font-weight:500;color:'+m.color+';margin-bottom:4px">'+pct+'%</div>'
+      +'<div class="sector-ring"><div class="sector-fill" style="width:'+pct+'%;background:'+m.color+'"></div></div>'
+      +'<div style="font-size:11px;color:'+m.color+'">'+st.weekDays+'/7 дней на неделе</div>';
+    wrap.appendChild(card);
+  });
+}
+
+function renderTasks(){
+  const today=todayStr();
+  const checked=state.checked[today]||{};
+  let total=0,done=0;
+  function build(id,tasks){
+    const w=document.getElementById(id);w.innerHTML='';
+    tasks.forEach(t=>{
+      total++;const isDone=!!checked[t.id];if(isDone)done++;
+      const row=document.createElement('div');row.className='task';
+      const cb=document.createElement('div');cb.className='cb'+(isDone?' done':'');
+      cb.onclick=()=>toggleTask(t.id,t.xp);
+      const info=document.createElement('div');info.className='tinfo';
+      info.innerHTML='<div class="tname'+(isDone?' done':'')+'">'+t.text+'</div><div class="tsub">'+t.sub+'</div>';
+      const badge=document.createElement('div');badge.className='xpbadge';badge.textContent='+'+t.xp+' XP';
+      row.appendChild(cb);row.appendChild(info);row.appendChild(badge);
+      w.appendChild(row);
+    });
+  }
+  build('tasks-biz',TASKS.biz);build('tasks-monk',TASKS.monk);
+  build('tasks-body',TASKS.body);build('tasks-mind',TASKS.mind);
+  document.getElementById('done-today').textContent=done+'/'+total;
+}
+
+function toggleTask(id,xp){
+  const today=todayStr();
+  if(!state.checked[today])state.checked[today]={};
+  const was=state.checked[today][id];
+  state.checked[today][id]=!was;
+  if(!was){state.xp+=xp;showToast('+'+xp+' XP');checkDayComplete(today);}
+  else state.xp=Math.max(0,state.xp-xp);
+  saveState();renderAll();
+}
+
+function checkDayComplete(today){
+  const checked=state.checked[today]||{};
+  const all=[...TASKS.biz,...TASKS.monk,...TASKS.body,...TASKS.mind];
+  const done=all.filter(t=>checked[t.id]).length;
+  if(done>=Math.floor(all.length*0.8)&&!state.history.includes(today)){
+    state.history.push(today);
+    const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+    const ys=yesterday.toISOString().slice(0,10);
+    if(state.history.includes(ys)||state.streak===0)state.streak++;
+    else state.streak=1;
+    showToast('День засчитан! Серия: '+state.streak+' 🔥');
+  }
+}
+
+function renderFinance(){
+  const f=state.finance;
+  const bal=f.balance||0;
+  const balEl=document.getElementById('fin-balance');
+  if(balEl){balEl.textContent=(bal>=0?'$':'-$')+Math.abs(bal).toLocaleString();}
+  document.getElementById('fin-income').textContent='$'+f.income.toLocaleString();
+  document.getElementById('fin-expense').textContent='$'+f.expense.toLocaleString();
+  document.getElementById('fin-save').textContent='$'+f.save.toLocaleString();
+  const target=Math.round(f.income*0.1);
+  const pct=target>0?Math.min(100,Math.round(f.save/target*100)):0;
+  const pctColor=pct>=100?'#1D9E75':pct>=50?'#BA7517':'#E24B4A';
+  const el=document.getElementById('fin-save-pct');
+  el.textContent=pct+'%';el.style.color=pctColor;
+  document.getElementById('fin-save-target').textContent='цель: $'+target;
+  const bar=document.getElementById('fin-save-bar');
+  bar.style.width=pct+'%';bar.style.background=pctColor;
+  const log=document.getElementById('fin-log');
+  const recent=(f.log||[]).slice(-6).reverse();
+  log.innerHTML='';
+  recent.forEach(e=>{
+    const row=document.createElement('div');row.className='fin-row';
+    const tc=e.type==='income'?'fi':e.type==='expense'?'fe':'fs';
+    const tl=e.type==='income'?'Приход':e.type==='expense'?'Расход':'Накопление';
+    const sign=e.type==='expense'?'-':'+';
+    const catBadge=e.cat?'<span style="font-size:10px;color:#888;background:#f0efe8;padding:1px 6px;border-radius:6px;margin-left:4px">'+e.cat+'</span>':'';
+    row.innerHTML='<span class="fin-type '+tc+'">'+tl+'</span>'
+      +'<span style="flex:1;color:#888;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(e.desc||'—')+catBadge+'</span>'
+      +'<span style="font-weight:500;color:#1a1a18;white-space:nowrap">'+sign+'$'+e.amount.toLocaleString()+'</span>';
+    log.appendChild(row);
+  });
+}
+
+function addFinance(){
+  const type=document.getElementById('fin-type').value;
+  const amount=parseInt(document.getElementById('fin-amount').value)||0;
+  const desc=document.getElementById('fin-desc').value||'';
+  if(amount<=0)return;
+  if(!state.finance.log)state.finance.log=[];
+  const cat=type==='expense'?detectCategory(desc):(type==='save'?'💰 Накопления':'💵 Доход');
+  state.finance.log.push({type,amount,desc,cat,date:todayStr()});
+  if(type==='income'){
+    state.finance.income+=amount;
+    state.finance.balance=(state.finance.balance||0)+amount;
+  } else if(type==='expense'){
+    state.finance.expense+=amount;
+    state.finance.balance=(state.finance.balance||0)-amount;
+  } else {
+    state.finance.save+=amount;
+    state.finance.balance=(state.finance.balance||0)-amount;
+  }
+  const needed=Math.round(state.finance.income*0.1);
+  if(type==='income'&&state.finance.save<needed){
+    showToast('Категория: '+cat+' | Отложи 10% = $'+Math.round(amount*0.1));
+  } else {
+    showToast('Категория: '+cat+(type==='save'?' | Накопления +$'+amount:''));
+  }
+  document.getElementById('fin-amount').value='';
+  document.getElementById('fin-desc').value='';
+  saveState();renderAll();
+}
+
+function addMonkIncome(){
+  const v=parseInt(document.getElementById('monk-input').value)||0;
+  if(v<=0)return;
+  state.monkIncome+=v;
+  state.goals.monk=state.monkIncome;
+  state.finance.income+=v;
+  if(!state.finance.log)state.finance.log=[];
+  state.finance.log.push({type:'income',amount:v,desc:'Монах (США)',date:todayStr()});
+  document.getElementById('monk-input').value='';
+  if(state.monkIncome>=1000)showToast('ТРИГГЕР! Переключай команду на Монаха! 🚀');
+  else showToast('+$'+v+' от Монаха! До триггера: $'+(1000-state.monkIncome));
+  saveState();renderAll();
+}
+
+function renderGoals(){
+  const block=document.getElementById('goals-block');block.innerHTML='';
+  GOALS.forEach(g=>{
+    const val=g.key==='monk'?state.monkIncome:(state.goals[g.key]||0);
+    const pct=Math.min(100,Math.round(val/g.target*100));
+    const row=document.createElement('div');row.className='goal-row';
+    row.innerHTML='<div style="font-size:13px;color:#1a1a18;flex:1">'+g.text+'</div>'
+      +'<div class="gwrap"><div class="gbar" style="width:'+pct+'%"></div></div>'
+      +'<div style="font-size:12px;font-weight:500;color:#534AB7;white-space:nowrap;min-width:32px;text-align:right">'+pct+'%</div>';
+    block.appendChild(row);
+  });
+}
+
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function exportData(){
+  const data=JSON.stringify(state,null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='growth_tracker_backup_'+todayStr()+'.json';
+  a.click();URL.revokeObjectURL(url);
+  showToast('Данные экспортированы!');
+}
+
+function importData(){
+  const input=document.createElement('input');
+  input.type='file';input.accept='.json';
+  input.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const imported=JSON.parse(ev.target.result);
+        state=imported;saveState();renderAll();
+        showToast('Данные импортированы!');
+      }catch(err){showToast('Ошибка импорта файла');}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function resetConfirm(){
+  if(confirm('Сбросить все данные? Это действие нельзя отменить.')){
+    localStorage.removeItem(KEY);
+    state={xp:0,streak:0,startDate:todayStr(),history:[],monkIncome:0,goals:{bmw:0,income5k:0,monk:0,forbes:0},checked:{},finance:{income:0,expense:0,save:0,log:[]}};
+    saveState();renderAll();
+    showToast('Данные сброшены');
+  }
+}
+
+
+function renderGrowth(){
+  const allTasks=[...TASKS.biz,...TASKS.monk,...TASKS.body,...TASKS.mind];
+  const totalPerDay=allTasks.length;
+  const today=todayStr();
+
+  // today's completion rate
+  const checkedToday=state.checked[today]||{};
+  const doneToday=allTasks.filter(t=>checkedToday[t.id]).length;
+  const rateToday=totalPerDay>0?doneToday/totalPerDay:0;
+  const pctToday=Math.round(rateToday*100);
+
+  // last 7 days avg
+  let week7sum=0,week7count=0;
+  for(let i=1;i<=7;i++){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const ds=d.toISOString().slice(0,10);
+    const c=state.checked[ds]||{};
+    const done=allTasks.filter(t=>c[t.id]).length;
+    week7sum+=done/totalPerDay;week7count++;
+  }
+  const rateWeek=week7count>0?week7sum/week7count:0;
+  const pctWeek=Math.round(rateWeek*100);
+
+  // cumulative growth: each completed day gives +1% * completion_rate
+  // total multiplier = product of (1 + 0.01 * rate) for each tracked day
+  const allDays=Object.keys(state.checked).sort();
+  let multiplier=1;
+  allDays.forEach(ds=>{
+    const c=state.checked[ds]||{};
+    const done=allTasks.filter(t=>c[t.id]).length;
+    const rate=done/totalPerDay;
+    if(rate>0) multiplier*=(1+0.01*rate);
+  });
+
+  // overall % better
+  const overallPct=Math.round((multiplier-1)*100);
+  const sign=overallPct>=0?'+':'';
+
+  // color based on today's performance
+  const bigColor=rateToday>=0.8?'#1D9E75':rateToday>=0.5?'#BA7517':'#E24B4A';
+
+  document.getElementById('growth-big').textContent=sign+overallPct+'%';
+  document.getElementById('growth-big').style.color=bigColor;
+  document.getElementById('growth-today').textContent=(pctToday>=0?'+':'')+pctToday+'% сегодня';
+  document.getElementById('growth-today').style.color=pctToday>=80?'#1D9E75':pctToday>=50?'#BA7517':'#E24B4A';
+  document.getElementById('growth-week').textContent=(pctWeek>=0?'+':'')+Math.round(pctWeek)+'% ср/нед';
+  document.getElementById('growth-mult').textContent='×'+multiplier.toFixed(2);
+
+  // progress toward 37.78 (1.01^365)
+  const target=37.78;
+  const yearPct=Math.min(100,Math.round((multiplier-1)/(target-1)*100));
+  document.getElementById('growth-year-pct').textContent=yearPct+'%';
+  document.getElementById('growth-year-bar').style.width=yearPct+'%';
+
+  const daysTracked=allDays.length;
+  document.getElementById('growth-desc').textContent=
+    daysTracked===0?'начни отмечать задачи чтобы увидеть рост':
+    'за '+daysTracked+' '+(daysTracked===1?'день':daysTracked<5?'дня':'дней')+' ведения трекера';
+}
+
+
+// ——— Category detection ———
+const CAT_RULES=[
+  {cat:'🍔 Еда',kw:['еда','food','cafe','кафе','ресторан','restaurant','доставка','delivery','магазин','shop','groceries','продукты','пицца','burger','суши','lunch','обед','ужин']},
+  {cat:'🚗 Транспорт',kw:['такси','taxi','uber','bolt','яндекс','metro','метро','bus','автобус','бензин','fuel','parking','парковка','каршеринг']},
+  {cat:'💪 Здоровье',kw:['gym','фитнес','fitness','аптека','pharmacy','врач','doctor','спорт','sport','витамины','vitamins']},
+  {cat:'📚 Обучение',kw:['курс','course','обучение','книга','book','udemy','skill','учёба','образование']},
+  {cat:'🎮 Развлечения',kw:['netflix','spotify','игры','games','cinema','кино','entertainment','подписка','subscription']},
+  {cat:'💼 Бизнес',kw:['реклама','ads','хостинг','hosting','домен','domain','сервис','service','heygen','canva','tool','инструмент']},
+  {cat:'🏠 Жильё',kw:['аренда','rent','коммунал','utility','интернет','internet','электричество']},
+  {cat:'👕 Одежда',kw:['одежда','clothes','обувь','shoes','магазин','zara','h&m']},
+  {cat:'💰 Накопления',kw:['накопление','сбережения','savings','отложил','инвестиции']},
+];
+
+function detectCategory(desc){
+  if(!desc)return'❓ Другое';
+  const low=desc.toLowerCase();
+  for(const r of CAT_RULES){
+    for(const kw of r.kw){if(low.includes(kw))return r.cat;}
+  }
+  return'❓ Другое';
+}
+
+const CAT_COLORS=['#534AB7','#1D9E75','#BA7517','#E24B4A','#185FA5','#7B3FA0','#C0672A','#2A8080','#888'];
+
+function openSetBalance(){
+  document.getElementById('balance-input').value=state.finance.balance||'';
+  document.getElementById('modal-balance').classList.add('open');
+}
+function setBalance(){
+  const v=parseFloat(document.getElementById('balance-input').value)||0;
+  state.finance.balance=v;
+  closeModal('modal-balance');
+  saveState();renderAll();
+  showToast('Баланс обновлён: $'+v.toLocaleString());
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function openMonthReport(){
+  const now=new Date();
+  const monthKey=now.toISOString().slice(0,7);
+  const log=(state.finance.log||[]).filter(e=>e.date&&e.date.startsWith(monthKey));
+
+  const totIncome=log.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0);
+  const totExpense=log.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);
+  const totSave=log.filter(e=>e.type==='save').reduce((s,e)=>s+e.amount,0);
+  const balance=totIncome-totExpense;
+
+  // group expenses by category
+  const cats={};
+  log.filter(e=>e.type==='expense').forEach(e=>{
+    const cat=e.cat||detectCategory(e.desc);
+    cats[cat]=(cats[cat]||0)+e.amount;
+  });
+
+  const mn=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  document.getElementById('report-title').textContent='Отчёт: '+mn[now.getMonth()]+' '+now.getFullYear();
+
+  const saveRate=totIncome>0?Math.round(totSave/totIncome*100):0;
+  const saveColor=saveRate>=10?'#1D9E75':saveRate>=5?'#BA7517':'#E24B4A';
+  document.getElementById('report-summary').innerHTML=
+    '<div class="grid" style="margin-bottom:0">'
+    +'<div class="metric"><div class="mlabel">Приход</div><div class="mval" style="color:#1D9E75">$'+totIncome.toLocaleString()+'</div></div>'
+    +'<div class="metric"><div class="mlabel">Расход</div><div class="mval" style="color:#E24B4A">$'+totExpense.toLocaleString()+'</div></div>'
+    +'<div class="metric"><div class="mlabel">Накопил</div><div class="mval" style="color:#534AB7">$'+totSave.toLocaleString()+'</div></div>'
+    +'<div class="metric"><div class="mlabel">% накоплений</div><div class="mval" style="color:'+saveColor+'">'+saveRate+'%</div></div>'
+    +'</div>';
+
+  // draw chart
+  const catKeys=Object.keys(cats);
+  const catVals=catKeys.map(k=>cats[k]);
+  const ctx=document.getElementById('report-chart');
+  if(window._reportChart)window._reportChart.destroy();
+  if(catKeys.length>0){
+    ctx.style.display='block';
+    window._reportChart=new Chart(ctx,{
+      type:'doughnut',
+      data:{labels:catKeys,datasets:[{data:catVals,backgroundColor:CAT_COLORS.slice(0,catKeys.length),borderWidth:0}]},
+      options:{plugins:{legend:{position:'bottom',labels:{font:{size:12},padding:12}}},cutout:'60%'}
+    });
+  } else {
+    ctx.style.display='none';
+  }
+
+  // category list
+  const sorted=catKeys.sort((a,b)=>cats[b]-cats[a]);
+  document.getElementById('report-cats').innerHTML=sorted.map((cat,i)=>{
+    const pct=totExpense>0?Math.round(cats[cat]/totExpense*100):0;
+    return'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:13px">'
+      +'<span style="width:10px;height:10px;border-radius:50%;background:'+CAT_COLORS[i%CAT_COLORS.length]+';flex-shrink:0;display:inline-block"></span>'
+      +'<span style="flex:1">'+cat+'</span>'
+      +'<span style="color:#888">'+pct+'%</span>'
+      +'<span style="font-weight:500;min-width:50px;text-align:right">$'+cats[cat].toLocaleString()+'</span>'
+      +'</div>';
+  }).join('');
+
+  document.getElementById('modal-report').classList.add('open');
+}
+
+// close modals on overlay click
+document.addEventListener('click',e=>{
+  if(e.target.classList.contains('modal-overlay'))e.target.classList.remove('open');
+});
+
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+
+async function submitReflection(){
+  const answers={
+    r1:document.getElementById('r1').value,r2:document.getElementById('r2').value,
+    r3:document.getElementById('r3').value,r4:document.getElementById('r4').value,
+    r5:document.getElementById('r5').value,r6:document.getElementById('r6').value,
+    r7:document.getElementById('r7').value,r8:document.getElementById('r8').value,
+    r9:document.getElementById('r9').value
+  };
+  const filled=Object.values(answers).filter(v=>v.trim().length>15).length;
+  if(filled<4){showToast('Заполни хотя бы 4 вопроса');return;}
+  const btn=document.getElementById('reflect-btn');
+  btn.textContent='Анализирую...';btn.disabled=true;
+  document.getElementById('ai-result-wrap').style.display='block';
+  document.getElementById('ai-result').textContent='ИИ читает твою рефлексию...';
+  const allTasks=[...TASKS.biz,...TASKS.monk,...TASKS.body,...TASKS.mind];
+  const prompt=`Ты — личный коуч и стратег. Тебе пишет предприниматель 28 лет из Минска:
+- SMM-агентство (6 клиентов, $1500/мес). Запускает ИИ-аватар "Монах" на рынок США с цифровыми продуктами.
+- Цели: Forbes 30 до 30 (2 года), BMW M8, доход $5k/мес, выход на США.
+- Тормозит: прокрастинация, телефон, срывы режима.
+
+РЕФЛЕКСИЯ НЕДЕЛИ:
+1. Состояние: ${answers.r1}
+2. Действия из страха: ${answers.r2}
+3. Поводы для гордости: ${answers.r3}
+4. Что двигало бизнес: ${answers.r4}
+5. Что тормозило: ${answers.r5}
+6. Главный рычаг: ${answers.r6}
+7. Сверка с Forbes-целью: ${answers.r7}
+8. Инсайт недели: ${answers.r8}
+9. Образ через год: ${answers.r9}
+
+Ответь СТРОГО в таком формате:
+
+АНАЛИЗ НЕДЕЛИ
+[3-4 предложения — прямой, честный разбор паттернов. Без лести. Говори как умный друг.]
+
+ГЛАВНЫЙ ИНСАЙТ
+[1-2 предложения — самое важное что нужно удержать]
+
+ЗАДАЧИ — БИЗНЕС (агентство)
+1. [конкретная задача] | XP:20
+2. [конкретная задача] | XP:15
+3. [конкретная задача] | XP:10
+
+ЗАДАЧИ — МОНАХ (США)
+1. [конкретная задача по Монаху] | XP:25
+2. [конкретная задача] | XP:15
+3. [конкретная задача] | XP:10
+
+ФОКУС НЕДЕЛИ
+[Одна короткая фраза-мантра на неделю]`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    const data=await resp.json();
+    const text=data.content&&data.content[0]?data.content[0].text:'Нет ответа от ИИ';
+    document.getElementById('ai-result').textContent=text;
+    applyAITasks(text);
+    if(!state.reflections)state.reflections=[];
+    state.reflections.push({date:new Date().toISOString(),answers,aiResponse:text});
+    const lastEl=document.getElementById('last-reflection-info');
+    if(lastEl)lastEl.textContent='Рефлексия: '+new Date().toLocaleDateString('ru',{day:'numeric',month:'long'});
+    saveState();renderAll();
+    showToast('Задачи обновлены ИИ! 🧠');
+  }catch(e){
+    document.getElementById('ai-result').textContent='Ошибка ИИ: '+e.message;
+  }
+  btn.textContent='🧠 Анализировать и обновить задачи';btn.disabled=false;
+}
+
+function applyAITasks(text){
+  try{
+    function parseTasks(sectionName,prefix,sector){
+      const rx=new RegExp(sectionName+'[\\s\\S]*?(?=ЗАДАЧИ —|ФОКУС|$)','i');
+      const sec=text.match(rx);if(!sec)return null;
+      const lines=sec[0].split('\n').filter(l=>/^\d+\./.test(l.trim()));
+      if(lines.length===0)return null;
+      return lines.map((line,i)=>{
+        const xpM=line.match(/XP:(\d+)/i);
+        const xp=xpM?parseInt(xpM[1]):15;
+        const txt=line.replace(/^\d+\.\s*/,'').replace(/\s*\|\s*XP:\d+/i,'').trim();
+        return{id:prefix+(i+1),text:txt,sub:'ИИ-задача по рефлексии',xp,sector,aiGenerated:true};
+      });
+    }
+    const bizTasks=parseTasks('ЗАДАЧИ — БИЗНЕС','ai_b_','biz');
+    const monkTasks=parseTasks('ЗАДАЧИ — МОНАХ','ai_m_','monk');
+    if(bizTasks||monkTasks){
+      state.customTasks={
+        biz:bizTasks||TASKS.biz,
+        monk:monkTasks||TASKS.monk,
+        body:TASKS.body,
+        mind:TASKS.mind
+      };
+    }
+  }catch(e){console.log('Task parse err:',e);}
+}
+
+
+// ══════════════ REFLECTION SYSTEM ══════════════
+const REFL_QUESTIONS = [
+  {cat:'🌅 Общее состояние', q:'Как ты себя чувствуешь на этой неделе — внутри, не снаружи?', hint:'Не "нормально", а реально: что внутри? Тревога, подъём, апатия, сила?'},
+  {cat:'💼 Бизнес и деньги', q:'Что реально двигало бизнес вперёд на этой неделе? Что ты избегал делать, хотя знал, что надо?', hint:'Назови конкретное действие, которое откладывал. Почему?'},
+  {cat:'🚀 Монах и цифровые продукты', q:'Сколько роликов вышло? Какая конверсия? Что сработало, что нет?', hint:'Цифры: просмотры, переходы, продажи. Без прикрас.'},
+  {cat:'💪 Тело и здоровье', q:'Как ты обращался с телом на этой неделе — спорт, сон, еда, душ?', hint:'Где была дисциплина, а где срывы? Что запустил?'},
+  {cat:'🧠 Ум и обучение', q:'Что нового ты узнал или понял за неделю? Что изменило твой взгляд?', hint:'Может быть книга, разговор, видео, ошибка — что реально зацепило?'},
+  {cat:'😮 Паттерны и саботаж', q:'Где ты снова повторил старый паттерн — прокрастинация, телефон, избегание? В какой момент это происходит?', hint:'Не осуждай, просто замечай. Когда именно тебя "уводит"?'},
+  {cat:'❤️ Отношения и люди', q:'Как ты себя чувствуешь в отношениях? Что дала или забрала энергию в общении с людьми?', hint:'Партнёр, друзья, клиенты — кто заряжает, кто сливает?'},
+  {cat:'🔥 Энергия и мотивация', q:'В какой момент на этой неделе ты чувствовал себя живым и на подъёме? Что тебя зажигало?', hint:'Это важная подсказка — там твоя сила. Зафиксируй.'},
+  {cat:'🎯 Фокус и приоритеты', q:'Если честно: ты двигался к Forbes 30 до 30 и BMW, или просто был занят?', hint:'Занятость и движение к цели — разные вещи. Оцени себя честно.'},
+  {cat:'🌟 Неделя вперёд', q:'Что одно действие на следующей неделе сдвинет тебя больше всего? Что ты хочешь сделать иначе?', hint:'Не список из 20 пунктов. Одно главное. И один паттерн который меняешь.'},
+];
+
+let reflStep = 0;
+let reflAnswers = [];
+let reflAiTasks = null;
+
+function openReflection() {
+  reflStep = 0;
+  reflAnswers = new Array(REFL_QUESTIONS.length).fill('');
+  // restore saved answers if exists
+  const today = todayStr();
+  const weekKey = getWeekKey();
+  if(state.reflections && state.reflections[weekKey]) {
+    reflAnswers = state.reflections[weekKey].answers || reflAnswers;
+  }
+  document.getElementById('refl-ai-block').style.display='none';
+  document.getElementById('refl-result-block').style.display='none';
+  document.getElementById('refl-question-block').style.display='block';
+  document.getElementById('modal-reflection').classList.add('open');
+  renderReflStep();
+}
+
+function getWeekKey() {
+  const d = new Date();
+  const monday = getMondayOfWeek(todayStr());
+  return monday.toISOString().slice(0,10);
+}
+
+function renderReflStep() {
+  const q = REFL_QUESTIONS[reflStep];
+  const total = REFL_QUESTIONS.length;
+  const pct = Math.round((reflStep / total) * 100);
+  document.getElementById('refl-step-label').textContent = `Вопрос ${reflStep+1} из ${total}`;
+  document.getElementById('refl-pct').textContent = pct + '%';
+  document.getElementById('refl-bar').style.width = pct + '%';
+  document.getElementById('refl-category').textContent = q.cat;
+  document.getElementById('refl-question').textContent = q.q;
+  document.getElementById('refl-hint').textContent = q.hint;
+  document.getElementById('refl-answer').value = reflAnswers[reflStep] || '';
+  document.getElementById('refl-prev-btn').style.display = reflStep > 0 ? 'block' : 'none';
+  document.getElementById('refl-next-btn').textContent = reflStep === total - 1 ? 'Завершить и получить задачи ✨' : 'Далее →';
+  setTimeout(() => document.getElementById('refl-answer').focus(), 100);
+}
+
+function reflPrev() {
+  reflAnswers[reflStep] = document.getElementById('refl-answer').value;
+  reflStep--;
+  renderReflStep();
+}
+
+function reflNext() {
+  reflAnswers[reflStep] = document.getElementById('refl-answer').value;
+  if(reflStep < REFL_QUESTIONS.length - 1) {
+    reflStep++;
+    renderReflStep();
+  } else {
+    submitReflection();
+  }
+}
+
+async function submitReflection() {
+  document.getElementById('refl-question-block').style.display = 'none';
+  document.getElementById('refl-nav').style.display = 'none';
+  document.getElementById('refl-ai-block').style.display = 'block';
+
+  // animate dots
+  let dots = 0;
+  const dotEl = document.getElementById('refl-loading-dots');
+  const dotTimer = setInterval(() => {
+    dots = (dots + 1) % 4;
+    dotEl.textContent = '●'.repeat(dots+1) + '○'.repeat(3-dots);
+  }, 400);
+
+  const weekKey = getWeekKey();
+  if(!state.reflections) state.reflections = {};
+  state.reflections[weekKey] = { answers: reflAnswers, date: todayStr() };
+
+  const prompt = buildReflectionPrompt();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `Ты личный коуч и стратег. Твоя задача — проанализировать еженедельную рефлексию предпринимателя и дать конкретный план на следующую неделю.
+
+Контекст о человеке:
+- 28 лет, Минск. SMM-агентство (6 клиентов, чек 130к руб, LTV 9 мес).
+- Главный проект: "Монах" — AI-аватар в Instagram на английскую аудиторию США. Тема: здоровье/народная медицина. Продукт: электронная книга $14. Монетизация через Amazon партнёрку и собственные продукты.
+- Цели: Forbes 30 до 30 (2 года), BMW M850, доход $5k/мес, триггер переключения команды на Монаха = $1000/мес.
+- Тормозит: прокрастинация, телефон, срывы режима.
+- Сильные стороны: маркетинг, вирусный контент, продажи, скорость идей.
+
+Отвечай ТОЛЬКО в JSON формате без markdown блоков:
+{
+  "insight": "2-3 предложения — главное что ты увидел в рефлексии, честно и прямо",
+  "pattern": "1 паттерн который повторяется и мешает расти",
+  "energy": "что зажигает человека на этой неделе — используй для задач",
+  "tasks": [
+    {"id":"w1","text":"конкретная задача","sub":"почему именно сейчас","xp":20,"sector":"biz"},
+    {"id":"w2","text":"конкретная задача","sub":"почему именно сейчас","xp":25,"sector":"monk"},
+    {"id":"w3","text":"конкретная задача","sub":"почему именно сейчас","xp":15,"sector":"body"},
+    {"id":"w4","text":"конкретная задача","sub":"почему именно сейчас","xp":15,"sector":"mind"},
+    {"id":"w5","text":"конкретная задача","sub":"почему именно сейчас","xp":20,"sector":"biz"}
+  ],
+  "weekly_focus": "одно предложение — главный фокус недели",
+  "stop_doing": "одно действие/паттерн который нужно остановить прямо сейчас",
+  "affirmation": "короткая мощная фраза-якорь на неделю (не банальная)"
+}
+
+Sectors: biz=агентство, monk=монах/цифровые продукты, body=тело/здоровье, mind=ум/обучение.
+XP от 5 до 35 — чем важнее задача сейчас исходя из рефлексии, тем выше XP.`,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    clearInterval(dotTimer);
+    const text = data.content.map(i => i.text || '').join('');
+    let parsed;
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      parsed = null;
+    }
+
+    if(parsed) {
+      reflAiTasks = parsed.tasks;
+      state.reflections[weekKey].aiResult = parsed;
+      // Apply AI tasks to weekly dynamic tasks
+      if(parsed.tasks && parsed.tasks.length > 0) {
+        state.weeklyTasks = parsed.tasks;
+        state.weeklyFocus = parsed.weekly_focus;
+      }
+      saveState();
+      showReflResult(parsed);
+    } else {
+      showReflError();
+    }
+  } catch(e) {
+    clearInterval(dotTimer);
+    showReflError();
+  }
+}
+
+function buildReflectionPrompt() {
+  let prompt = 'Вот мои ответы на рефлексию за неделю:\n\n';
+  REFL_QUESTIONS.forEach((q, i) => {
+    prompt += `${q.cat}\nВопрос: ${q.q}\nОтвет: ${reflAnswers[i] || '(не ответил)'}\n\n`;
+  });
+  return prompt;
+}
+
+function showReflResult(r) {
+  document.getElementById('refl-ai-block').style.display = 'none';
+  document.getElementById('refl-result-block').style.display = 'block';
+  document.getElementById('refl-nav').style.display = 'flex';
+  document.getElementById('refl-next-btn').textContent = 'Применить задачи ✓';
+  document.getElementById('refl-next-btn').onclick = applyWeeklyTasks;
+  document.getElementById('refl-prev-btn').style.display = 'none';
+
+  const tasksHtml = (r.tasks||[]).map(t => {
+    const sectorColors = {biz:'#1D9E75',monk:'#BA7517',body:'#534AB7',mind:'#185FA5'};
+    const sectorNames = {biz:'Бизнес',monk:'Монах',body:'Тело',mind:'Ум'};
+    const col = sectorColors[t.sector]||'#888';
+    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.07)">
+      <div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;margin-top:5px"></div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500;color:#1a1a18">${t.text}</div>
+        <div style="font-size:11px;color:#888;margin-top:2px">${t.sub}</div>
+      </div>
+      <div style="font-size:11px;font-weight:500;color:#3C3489;background:#EEEDFE;padding:2px 7px;border-radius:8px;white-space:nowrap">+${t.xp} XP</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('refl-result-block').innerHTML = `
+    <div style="background:#EEEDFE;border-radius:10px;padding:1rem;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:500;color:#3C3489;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">💡 Главный инсайт</div>
+      <div style="font-size:14px;color:#1a1a18;line-height:1.5">${r.insight||''}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:#FCEBEB;border-radius:8px;padding:.75rem">
+        <div style="font-size:11px;font-weight:500;color:#791F1F;margin-bottom:4px">🔄 Паттерн</div>
+        <div style="font-size:12px;color:#1a1a18">${r.pattern||''}</div>
+      </div>
+      <div style="background:#E1F5EE;border-radius:8px;padding:.75rem">
+        <div style="font-size:11px;font-weight:500;color:#085041;margin-bottom:4px">⚡ Что зажигает</div>
+        <div style="font-size:12px;color:#1a1a18">${r.energy||''}</div>
+      </div>
+    </div>
+    <div style="background:#FAEEDA;border-radius:8px;padding:.75rem;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:500;color:#633806;margin-bottom:4px">🎯 Фокус недели</div>
+      <div style="font-size:13px;font-weight:500;color:#1a1a18">${r.weekly_focus||''}</div>
+    </div>
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin-bottom:8px">📋 Задачи на неделю (от ИИ)</div>
+    <div style="margin-bottom:12px">${tasksHtml}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:#FCEBEB;border-radius:8px;padding:.75rem">
+        <div style="font-size:11px;font-weight:500;color:#791F1F;margin-bottom:4px">⛔ Остановить</div>
+        <div style="font-size:12px;color:#1a1a18">${r.stop_doing||''}</div>
+      </div>
+      <div style="background:#f5f4f0;border-radius:8px;padding:.75rem">
+        <div style="font-size:11px;font-weight:500;color:#888;margin-bottom:4px">💬 Якорь недели</div>
+        <div style="font-size:12px;font-style:italic;color:#1a1a18">"${r.affirmation||''}"</div>
+      </div>
+    </div>`;
+}
+
+function showReflError() {
+  document.getElementById('refl-ai-block').style.display = 'none';
+  document.getElementById('refl-result-block').style.display = 'block';
+  document.getElementById('refl-result-block').innerHTML =
+    '<div style="text-align:center;padding:20px;color:#888">Не удалось получить анализ от ИИ. Твои ответы сохранены — попробуй позже.</div>';
+  document.getElementById('refl-nav').style.display = 'flex';
+  document.getElementById('refl-next-btn').textContent = 'Закрыть';
+  document.getElementById('refl-next-btn').onclick = () => closeModal('modal-reflection');
+  document.getElementById('refl-prev-btn').style.display = 'none';
+}
+
+function applyWeeklyTasks() {
+  closeModal('modal-reflection');
+  renderAll();
+  showToast('Задачи на неделю обновлены ИИ ✨');
+}
+
+// ══════════════ WEEKLY TASKS IN RENDER ══════════════
+function getWeeklyBizTasks() {
+  if(state.weeklyTasks && state.weeklyTasks.length > 0) {
+    return state.weeklyTasks.filter(t => t.sector === 'biz' || t.sector === 'monk');
+  }
+  return TASKS.biz;
+}
+
+function renderWeeklyFocus() {
+  const el = document.getElementById('weekly-focus-text');
+  if(el) el.textContent = state.weeklyFocus || 'Запусти первый ролик Монаха на английском';
+}
+
+// ══════════════ PWA HINT ══════════════
+function showPWAHint() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  if(isIOS && !isStandalone) {
+    setTimeout(() => {
+      document.getElementById('pwa-hint').style.display = 'block';
+    }, 2000);
+  }
+}
+showPWAHint();
+
+function renderAll(){
+  renderXP();renderStreak();renderSectors();renderTasks();renderFinance();renderGoals();renderGrowth();renderWeeklyFocus();
+}
+
+renderAll();
+// Show last reflection date on load
+(function(){
+  if(state.reflections&&state.reflections.length>0){
+    const last=state.reflections[state.reflections.length-1];
+    const el=document.getElementById('last-reflection-info');
+    if(el)el.textContent='Рефлексия: '+new Date(last.date).toLocaleDateString('ru',{day:'numeric',month:'long'});
+  }
+})();
+</script>
+
+<!-- Set Balance Modal -->
+<div class="modal-overlay" id="modal-balance">
+  <div class="modal">
+    <h3>Текущий баланс</h3>
+    <div style="font-size:13px;color:#888;margin-bottom:12px">Введи сколько у тебя сейчас денег на всех счётах и картах</div>
+    <div class="fin-input-row" style="margin-top:0">
+      <input type="number" id="balance-input" placeholder="Сумма $" style="flex:1" min="0">
+      <button onclick="setBalance()">Сохранить</button>
+      <button onclick="closeModal('modal-balance')">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- Month Report Modal -->
+<div class="modal-overlay" id="modal-report">
+  <div class="modal">
+    <h3 id="report-title">Отчёт за месяц</h3>
+    <div id="report-summary" style="margin-bottom:16px"></div>
+    <canvas id="report-chart" height="200"></canvas>
+    <div id="report-cats" style="margin-top:16px"></div>
+    <div style="margin-top:16px;text-align:center">
+      <button onclick="closeModal('modal-report')" style="padding:8px 24px;border:0.5px solid #ccc;border-radius:8px;background:#fff;cursor:pointer">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Reflection Modal -->
+<div class="modal-overlay" id="modal-reflect">
+  <div class="modal" style="border-radius:20px 20px 0 0;max-height:92vh">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0">🧠 Еженедельная рефлексия</h3>
+      <button onclick="closeModal('modal-reflect')" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888">✕</button>
+    </div>
+    <div style="font-size:12px;color:#888;margin-bottom:16px">Отвечай честно — ИИ проанализирует и обновит задачи на неделю</div>
+
+    <div style="font-size:11px;font-weight:500;color:#534AB7;letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px">🌱 Жизнь и состояние</div>
+
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">1. Каким было твоё внутреннее состояние на этой неделе?</div>
+      <div style="font-size:11px;color:#888;margin-bottom:5px">Энергия, настроение, тревоги, что давило и радовало</div>
+      <textarea id="r1" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;outline:none;resize:vertical;min-height:70px;font-family:inherit" placeholder="Пиши честно, без фильтров..."></textarea>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">2. Где действовал из страха, а не из силы?</div>
+      <div style="font-size:11px;color:#888;margin-bottom:5px">Что откладывал? Где избегал дискомфорта? Какой паттерн повторился?</div>
+      <textarea id="r2" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;outline:none;resize:vertical;min-height:70px;font-family:inherit" placeholder="Паттерны которые заметил..."></textarea>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">3. За что можешь собой гордиться на этой неделе?</div>
+      <div style="font-size:11px;color:#888;margin-bottom:5px">Минимум 3 вещи — даже маленькие победы считаются</div>
+      <textarea id="r3" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;outline:none;resize:vertical;min-height:70px;font-family:inherit" placeholder="1.&#10;2.&#10;3."></textarea>
+    </div>
+
+    <div style="font-size:11px;font-weight:500;color:#BA7517;letter-spacing:.05em;text-transform:uppercase;margin:16px 0 10px">🚀 Бизнес и деньги</div>
+
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">4. Что реально двигало бизнес вперёд?</div>
+      <div style="font-size:11px;color:#888;margin-bottom:5px">Лиды, деньги, договорённости, прогресс Монаха — конкретика</div>
+      <textarea id="r4" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;outline:none;resize:vertical;min-height:70px;font-family:inherit" placeholder="Конкретные цифры и факты..."></textarea>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">5. Что тормозило? Какая гипотеза провалилась?</div>
+      <div style="font-size:11px;color:#888;margin-bottom:5px">Честный разбор без самобичевания — что не работает и почему</div>
+      <textarea id="r5" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;outline:none;resize:vertical;min-height:70px;font-family:inherit" placeholder="Что не сработало..."></textarea>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">6. Одна вещь, которая даст максимум на следующей неделе?</div>
+      <div style="font-size:11px;color:#888;margin-bottom:5px">20% усилий → 80% результата. Что это?</div>
+      <textarea id="r6" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;outline:none;resize:vertical;min-height:60px;font-family:inherit" placeholder="Главный рычаг..."></textarea>
+    </div>
+
+    <div style="font-size:11px;font-weight:500;color:#185FA5;letter-spacing:.05em;text-transform:uppercase;margin:16px 0 10px">🧭 Направление и рост</div>
+
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">7. Ты движешься к Forbes 30 до 30? Что изменилось?</div>
+      <textarea id="r7" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;outline:none;resize:vertical;min-height:60px;font-family:inherit" placeholder="Честная сверка с целью..."></textarea>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">8. Что ты узнал о себе на этой неделе?</div>
+      <textarea id="r8" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;outline:none;resize:vertical;min-height:60px;font-family:inherit" placeholder="Главный инсайт недели..."></textarea>
+    </div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">9. Каким человеком хочешь быть через год? Ты становишься им?</div>
+      <textarea id="r9" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a18;outline:none;resize:vertical;min-height:70px;font-family:inherit" placeholder="Образ себя через год..."></textarea>
+    </div>
+
+    <button onclick="submitReflection()" id="reflect-btn" style="width:100%;padding:14px;font-size:15px;font-weight:500;background:#534AB7;color:#fff;border:none;border-radius:12px;cursor:pointer;margin-bottom:12px">
+      🧠 Анализировать и обновить задачи
+    </button>
+    <div id="ai-result-wrap" style="display:none;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:500;color:#888;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">Анализ ИИ + задачи на неделю</div>
+      <div id="ai-result" style="background:#f5f4f0;border-radius:10px;padding:1rem;font-size:13px;line-height:1.6;color:#1a1a18;white-space:pre-wrap">Анализирую рефлексию...</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- PWA install hint -->
+<div id="pwa-hint" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;font-size:13px;padding:10px 16px;border-radius:10px;z-index:200;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.2);max-width:320px">
+  📱 Чтобы добавить на iPhone: нажми <b>Поделиться → На экран «Домой»</b>
+  <div style="margin-top:8px"><button onclick="document.getElementById('pwa-hint').style.display='none'" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px">Понятно</button></div>
+</div>
+
+<!-- Reflection Modal -->
+<div class="modal-overlay" id="modal-reflection">
+  <div class="modal" style="max-width:560px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0">🧘 Еженедельная рефлексия</h3>
+      <button onclick="closeModal('modal-reflection')" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888">×</button>
+    </div>
+    <div id="reflection-progress" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:4px">
+        <span id="refl-step-label">Вопрос 1 из 10</span>
+        <span id="refl-pct">0%</span>
+      </div>
+      <div style="background:#f0efe8;border-radius:6px;height:6px;overflow:hidden">
+        <div id="refl-bar" style="height:6px;border-radius:6px;background:#534AB7;transition:width .4s;width:0%"></div>
+      </div>
+    </div>
+    <div id="refl-question-block">
+      <div id="refl-category" style="font-size:11px;font-weight:500;color:#888;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px"></div>
+      <div id="refl-question" style="font-size:16px;font-weight:500;color:#1a1a18;margin-bottom:6px;line-height:1.5"></div>
+      <div id="refl-hint" style="font-size:12px;color:#888;margin-bottom:12px;font-style:italic"></div>
+      <textarea id="refl-answer" rows="4" placeholder="Пиши честно, это только для тебя..." style="width:100%;padding:10px;font-size:14px;border:0.5px solid #ccc;border-radius:8px;resize:vertical;font-family:inherit;outline:none;line-height:1.5"></textarea>
+    </div>
+    <div id="refl-ai-block" style="display:none">
+      <div style="text-align:center;padding:24px 0">
+        <div style="font-size:32px;margin-bottom:12px">🤖</div>
+        <div style="font-size:14px;color:#888">ИИ анализирует твои ответы и формирует задачи на неделю...</div>
+        <div id="refl-loading-dots" style="margin-top:8px;font-size:20px;color:#534AB7">●●●</div>
+      </div>
+    </div>
+    <div id="refl-result-block" style="display:none"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end" id="refl-nav">
+      <button id="refl-prev-btn" onclick="reflPrev()" style="padding:8px 16px;border:0.5px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;display:none">← Назад</button>
+      <button id="refl-next-btn" onclick="reflNext()" style="padding:8px 20px;border:none;border-radius:8px;background:#534AB7;color:#fff;cursor:pointer;font-weight:500">Далее →</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
